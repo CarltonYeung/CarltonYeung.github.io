@@ -2,6 +2,18 @@
 <html>
 <head>
 <style>
+    #div_num_planes {
+        text-align: center;
+    }
+
+    #label_num_planes {
+        font-size: 2vw;
+    }
+
+    #num_planes {
+        font-size: 2vw;
+    }
+
     #planes {
         font-size: 4vw;
         text-align: center;
@@ -26,6 +38,20 @@
 </style>
 </head>
 <body>
+    <div id="div_num_planes">
+        <label id="label_num_planes" for="num_planes">Number of planes: </label>
+        <select name="num_planes" id="num_planes">
+            <option value=2>2</option>
+            <option value=3>3</option>
+            <option value=4>4</option>
+            <option value=5 selected="selected">5</option>
+            <option value=6>6</option>
+            <option value=7>7</option>
+            <option value=8>8</option>
+            <option value=9>9</option>
+            <option value=10>10</option>
+        </select>
+    </div>
     <p id="planes"></p>
     <div id="buttons">
         <button id="show_answer">Answer</button>
@@ -40,19 +66,23 @@ const HEAVY = "H";
 const LARGE = "L";
 const SMALL = "S";
 const MIN_SEPARATION = 4;
+const CHANCE_SUPER = 0.1;
+const CHANCE_HEAVY = 0.3;
+const CHANCE_LARGE = 0.5;
+const CHANCE_SMALL = 0.1;
 
-function generate_sequence() {
+function generate_sequence(num_planes) {
     let sequence = [];
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < num_planes; i++) {
         const rand = Math.random();
-        if (rand < 0.1) {
+        if (rand < CHANCE_SUPER) {
             sequence.push(SUPER);
         }
-        else if (rand < 0.3) {
+        else if (rand < CHANCE_SUPER + CHANCE_HEAVY) {
             sequence.push(HEAVY);
         }
-        else if (rand < 0.9) {
+        else if (rand < CHANCE_SUPER + CHANCE_HEAVY + CHANCE_LARGE) {
             sequence.push(LARGE);
         }
         else if (rand < 1) {
@@ -61,17 +91,17 @@ function generate_sequence() {
     }
 
     const num_J = sequence.filter(plane => plane === SUPER).length;
-    for (let i = num_J; i > 1; i--) {
+    for (let i = num_J; i > Math.max(1, CHANCE_SUPER * num_planes); i--) {
         sequence[sequence.findIndex(plane => plane === SUPER)] = LARGE;
     }
 
     const num_H = sequence.filter(plane => plane === HEAVY).length;
-    for (let i = num_H; i > 2; i--) {
+    for (let i = num_H; i > Math.max(2, CHANCE_HEAVY * num_planes); i--) {
         sequence[sequence.findIndex(plane => plane === HEAVY)] = LARGE;
     }
 
     const num_S = sequence.filter(plane => plane === SMALL).length;
-    for (let i = num_S; i > 1; i--) {
+    for (let i = num_S; i > Math.max(2, CHANCE_SMALL * num_planes); i--) {
         sequence[sequence.findIndex(plane => plane === SMALL)] = LARGE;
     }
 
@@ -113,7 +143,9 @@ function calculate_separation(sequence) {
 };
 
 function reset() {
-    let sequence = generate_sequence();
+    const select_num_planes = document.getElementById("num_planes");
+    const num_planes = select_num_planes.options[select_num_planes.selectedIndex].value;
+    let sequence = generate_sequence(num_planes);
     document.getElementById("planes").innerText = sequence.join("⇽");
 
     const text_answer = document.getElementById("answer")
