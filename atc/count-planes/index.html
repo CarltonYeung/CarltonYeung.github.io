@@ -1,2 +1,133 @@
-test
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    #planes {
+        font-size: 4vw;
+        text-align: center;
+    }
+
+    #buttons {
+        text-align: center;
+    }
+
+    #show_answer {
+        font-size: 4vw;
+    }
+
+    #reset {
+        font-size: 4vw;
+    }
+
+    #answer {
+        font-size: 4vw;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+    <p id="planes"></p>
+    <div id="buttons">
+        <button id="show_answer">Answer</button>
+        <button id ="reset">Reset</button>
+    </div>
+    <p id="answer"></p>
+
+<script type="text/javascript">
+
+const SUPER = "J";
+const HEAVY = "H";
+const LARGE = "L";
+const SMALL = "S";
+const MIN_SEPARATION = 4;
+
+function generate_sequence() {
+    let sequence = [];
+
+    for (let i = 0; i < 5; i++) {
+        const rand = Math.random();
+        if (rand < 0.1) {
+            sequence.push(SUPER);
+        }
+        else if (rand < 0.3) {
+            sequence.push(HEAVY);
+        }
+        else if (rand < 0.9) {
+            sequence.push(LARGE);
+        }
+        else if (rand < 1) {
+            sequence.push(SMALL);
+        }
+    }
+
+    const num_J = sequence.filter(plane => plane === SUPER).length;
+    for (let i = num_J; i > 1; i--) {
+        sequence[sequence.findIndex(plane => plane === SUPER)] = LARGE;
+    }
+
+    const num_H = sequence.filter(plane => plane === HEAVY).length;
+    for (let i = num_H; i > 2; i--) {
+        sequence[sequence.findIndex(plane => plane === HEAVY)] = LARGE;
+    }
+
+    const num_S = sequence.filter(plane => plane === SMALL).length;
+    for (let i = num_S; i > 1; i--) {
+        sequence[sequence.findIndex(plane => plane === SMALL)] = LARGE;
+    }
+
+    return sequence;
+};
+
+function calculate_separation(sequence) {
+    let wake_turb_sep = 0;
+
+    for (let i = 1; i < sequence.length; i++) {
+        const first = sequence[i-1];
+        const second = sequence[i];
+
+        wake_turb_sep += MIN_SEPARATION;
+        if (first === SUPER) {
+            if (second === HEAVY) {
+                wake_turb_sep += 4;
+            } else if (second === LARGE) {
+                wake_turb_sep += 5;
+            } else if (second === SMALL) {
+                wake_turb_sep += 6;
+            }
+        } else if (first === HEAVY) {
+            if (second === HEAVY) {
+                wake_turb_sep += 2;
+            } else if (second === LARGE) {
+                wake_turb_sep += 3;
+            } else if (second === SMALL) {
+                wake_turb_sep += 4;
+            }
+        } else if (first === LARGE) {
+            if (second === SMALL) {
+                wake_turb_sep += 2;
+            }
+        }
+    }
+
+    return wake_turb_sep;
+};
+
+function reset() {
+    let sequence = generate_sequence();
+    document.getElementById("planes").innerText = sequence.join("⇽");
+
+    const text_answer = document.getElementById("answer")
+    text_answer.innerText = "";
+    document.getElementById("show_answer").onclick = function() {
+        text_answer.innerText = calculate_separation(sequence);
+    };
+};
+
+document.getElementById("reset").onclick = reset;
+
+reset();
+
+</script>
+</body>
+</html>
 
