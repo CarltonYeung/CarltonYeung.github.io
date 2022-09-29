@@ -2,6 +2,10 @@
 <html>
 <head>
 <style>
+    #recat {
+        font-size: 2vw;
+    }
+
     #div_num_planes {
         text-align: center;
     }
@@ -39,6 +43,11 @@
 </head>
 <body>
     <div id="div_num_planes">
+        <div id="recat">
+            <input type="checkbox" id="is_recat" checked>
+            <label for="is_recat">RECAT 1.5</label>
+        </div>
+        <br>
         <label id="label_num_planes" for="num_planes">Number of planes: </label>
         <select name="num_planes" id="num_planes">
             <option value=2>2</option>
@@ -71,93 +80,176 @@ const CHANCE_HEAVY = 0.3;
 const CHANCE_LARGE = 0.5;
 const CHANCE_SMALL = 0.1;
 
-function generate_sequence(num_planes) {
+const A = "A";
+const B = "B";
+const C = "C";
+const D = "D";
+const E = "E";
+const F = "F";
+const CHANCE_A = CHANCE_SUPER;
+const CHANCE_B = CHANCE_HEAVY / 2;
+const CHANCE_C = CHANCE_B;
+const CHANCE_D = CHANCE_LARGE / 2;
+const CHANCE_E = CHANCE_D;
+const CHANCE_F = CHANCE_SMALL;
+
+
+function generate_sequence(num_planes, is_recat) {
     let sequence = [];
 
-    for (let i = 0; i < num_planes; i++) {
-        const rand = Math.random();
-        if (rand < CHANCE_SUPER) {
-            sequence.push(SUPER);
+    if (!is_recat) {
+        for (let i = 0; i < num_planes; i++) {
+            const rand = Math.random();
+            if (rand < CHANCE_SUPER) {
+                sequence.push(SUPER);
+            }
+            else if (rand < CHANCE_SUPER + CHANCE_HEAVY) {
+                sequence.push(HEAVY);
+            }
+            else if (rand < CHANCE_SUPER + CHANCE_HEAVY + CHANCE_LARGE) {
+                sequence.push(LARGE);
+            }
+            else if (rand < 1) {
+                sequence.push(SMALL);
+            }
         }
-        else if (rand < CHANCE_SUPER + CHANCE_HEAVY) {
-            sequence.push(HEAVY);
+
+        const num_J = sequence.filter(plane => plane === SUPER).length;
+        for (let i = num_J; i > Math.max(1, CHANCE_SUPER * num_planes); i--) {
+            sequence[sequence.findIndex(plane => plane === SUPER)] = LARGE;
         }
-        else if (rand < CHANCE_SUPER + CHANCE_HEAVY + CHANCE_LARGE) {
-            sequence.push(LARGE);
+
+        const num_H = sequence.filter(plane => plane === HEAVY).length;
+        for (let i = num_H; i > Math.max(2, CHANCE_HEAVY * num_planes); i--) {
+            sequence[sequence.findIndex(plane => plane === HEAVY)] = LARGE;
         }
-        else if (rand < 1) {
-            sequence.push(SMALL);
+
+        const num_S = sequence.filter(plane => plane === SMALL).length;
+        for (let i = num_S; i > Math.max(2, CHANCE_SMALL * num_planes); i--) {
+            sequence[sequence.findIndex(plane => plane === SMALL)] = LARGE;
         }
     }
-
-    const num_J = sequence.filter(plane => plane === SUPER).length;
-    for (let i = num_J; i > Math.max(1, CHANCE_SUPER * num_planes); i--) {
-        sequence[sequence.findIndex(plane => plane === SUPER)] = LARGE;
-    }
-
-    const num_H = sequence.filter(plane => plane === HEAVY).length;
-    for (let i = num_H; i > Math.max(2, CHANCE_HEAVY * num_planes); i--) {
-        sequence[sequence.findIndex(plane => plane === HEAVY)] = LARGE;
-    }
-
-    const num_S = sequence.filter(plane => plane === SMALL).length;
-    for (let i = num_S; i > Math.max(2, CHANCE_SMALL * num_planes); i--) {
-        sequence[sequence.findIndex(plane => plane === SMALL)] = LARGE;
+    else {
+        for (let i = 0; i < num_planes; i++) {
+            const rand = Math.random();
+            if (rand < CHANCE_A) {
+                sequence.push(A);
+            }
+            else if (rand < CHANCE_A + CHANCE_B) {
+                sequence.push(B);
+            }
+            else if (rand < CHANCE_A + CHANCE_B + CHANCE_C) {
+                sequence.push(C);
+            }
+            else if (rand < CHANCE_A + CHANCE_B + CHANCE_C + CHANCE_D) {
+                sequence.push(D);
+            }
+            else if (rand < CHANCE_A + CHANCE_B + CHANCE_C + CHANCE_D + CHANCE_E) {
+                sequence.push(E);
+            }
+            else if (rand < CHANCE_A + CHANCE_B + CHANCE_C + CHANCE_D + CHANCE_E + CHANCE_F) {
+                sequence.push(F);
+            }
+        }
     }
 
     return sequence;
 };
 
-function calculate_separation(sequence) {
-    let wake_turb_sep = 0;
+function calculate_separation(sequence, is_recat) {
+    let total_separation = 0;
 
     for (let i = 1; i < sequence.length; i++) {
         const first = sequence[i-1];
         const second = sequence[i];
 
-        wake_turb_sep += MIN_SEPARATION;
-        if (first === SUPER) {
-            if (second === HEAVY) {
-                wake_turb_sep += 4;
-            } else if (second === LARGE) {
-                wake_turb_sep += 5;
-            } else if (second === SMALL) {
-                wake_turb_sep += 6;
-            }
-        } else if (first === HEAVY) {
-            if (second === HEAVY) {
-                wake_turb_sep += 2;
-            } else if (second === LARGE) {
-                wake_turb_sep += 3;
-            } else if (second === SMALL) {
-                wake_turb_sep += 4;
-            }
-        } else if (first === LARGE) {
-            if (second === SMALL) {
-                wake_turb_sep += 2;
+        separation = MIN_SEPARATION;
+
+        if (!is_recat) {
+            if (first === SUPER) {
+                if (second === HEAVY) {
+                    separation = 8;
+                } else if (second === LARGE) {
+                    separation = 9;
+                } else if (second === SMALL) {
+                    separation = 10;
+                }
+            } else if (first === HEAVY) {
+                if (second === HEAVY) {
+                    separation = 6;
+                } else if (second === LARGE) {
+                    separation = 7;
+                } else if (second === SMALL) {
+                    separation = 8;
+                }
+            } else if (first === LARGE) {
+                if (second === SMALL) {
+                    separation = 6;
+                }
             }
         }
+        else {
+            if (first === A) {
+                if (second === B) {
+                    separation = 7;
+                } else if (second === C) {
+                    separation = 8;
+                } else if (second === D || second === E) {
+                    separation = 9;
+                }
+                else if (second === F) {
+                    separation = 10;
+                }
+            } else if (first === B) {
+                if (second === B) {
+                    separation = 5;
+                } else if (second === C) {
+                    separation = 6;
+                } else if (second === D || second === E) {
+                    separation = 7;
+                } else if (second === F) {
+                    separation = 9;
+                }
+            } else if (first === C) {
+                if (second === D || second === E) {
+                    separation = 5;
+                } else if (second === F) {
+                    separation = 8;
+                }
+            } else if (first === D) {
+                if (second === F) {
+                    separation = 6;
+                }
+            }
+        }
+
+        total_separation += separation;
     }
 
-    return wake_turb_sep;
+    return total_separation;
 };
 
-function reset() {
+function reset(is_recat) {
     const select_num_planes = document.getElementById("num_planes");
     const num_planes = select_num_planes.options[select_num_planes.selectedIndex].value;
-    let sequence = generate_sequence(num_planes);
+    let sequence = generate_sequence(num_planes, is_recat);
     document.getElementById("planes").innerText = sequence.join("⇽");
 
     const text_answer = document.getElementById("answer")
     text_answer.innerText = "";
     document.getElementById("show_answer").onclick = function() {
-        text_answer.innerText = calculate_separation(sequence);
+        text_answer.innerText = calculate_separation(sequence, is_recat);
     };
 };
 
-document.getElementById("reset").onclick = reset;
+function set_recat() {
+    reset(this.checked);
+};
 
-reset();
+document.getElementById("reset").onclick = reset;
+document.getElementById("is_recat").onchange = set_recat;
+
+reset(document.getElementById("is_recat"));
 
 </script>
 </body>
