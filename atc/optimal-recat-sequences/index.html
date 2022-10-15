@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    sup {
+        display: inline-block;
+    }
+
+    #div_table {
+        display: table;
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    th, td {
+        padding: 0 15px;
+        text-align: left;
+    }
+
+    table, th, td {
+        border-collapse: collapse;
+        border-spacing: 0;
+        border: 1px solid black;
+    }
+</style>
+</head>
+<body>
+    <header>
+        <a href="https://github.com/CarltonYeung/CarltonYeung.github.io/blob/master/atc/optimal-recat-sequences/index.html">source code</a>
+        |
+        <a href="../count-planes/index.html">count planes</a>
+    </header>
+    <br>
+    <div>
+        <p id="footnote-0"><sup>0</sup> <b>Sequence: </b>The 3-plane sequence ABC means A is the plane closest to the runway and C is the furthest away.</p>
+        <p id="footnote-1"><sup>1</sup> <b>Miles saved: </b>Miles saved on final in comparison to swapping the order of the last 2 planes, e.g., ACB requires 1 mile less than ABC.</p>
+        <p id="footnote-2"><sup>2</sup> <b>Representation: </b>The Sequence in a graphical representation, e.g., F looks like * and A looks like ******.</p>
+    </div>
+    <br>
+    <div id="div_table">
+        <table>
+            <caption><h1>Optimal 3-plane sequences (RECAT 1.5)</h1></caption>
+            <tr>
+                <th>Sequence<a href="#footnote-0"><sup>0</sup></a></th>
+                <th>Miles saved<a href="#footnote-1"><sup>1</sup></a></th>
+                <th>Representation<a href="#footnote-2"><sup>2</sup></a></th>
+            </tr>
+            <tr>
+                <td>ACB</td>
+                <td>1</td>
+                <td><pre>******   ****   *****</pre></td>
+            </tr>
+            <tr>
+                <td>ADB</td>
+                <td>1</td>
+                <td><pre>******   ***   *****</pre></td>
+            </tr>
+            <tr>
+                <td>AEB</td>
+                <td>1</td>
+                <td><pre>******   **   *****</pre></td>
+            </tr>
+            <tr>
+                <td>AEF</td>
+                <td>1</td>
+                <td><pre>******   **   *</pre></td>
+            </tr>
+            <tr>
+                <td>AFB</td>
+                <td>2</td>
+                <td><pre>******   *   *****</pre></td>
+            </tr>
+            <tr>
+                <td>AFC</td>
+                <td>2</td>
+                <td><pre>******   *   ****</pre></td>
+            </tr>
+            <tr>
+                <td>AFD</td>
+                <td>1</td>
+                <td><pre>******   *   ***</pre></td>
+            </tr>
+            <tr>
+                <td>BBA</td>
+                <td>2</td>
+                <td><pre>*****   *****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>BCA</td>
+                <td>2</td>
+                <td><pre>*****   ****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>BCB</td>
+                <td>1</td>
+                <td><pre>*****   ****   *****</pre></td>
+            </tr>
+            <tr>
+                <td>BDA</td>
+                <td>2</td>
+                <td><pre>*****   ***   ******</pre></td>
+            </tr>
+            <tr>
+                <td>BDB</td>
+                <td>1</td>
+                <td><pre>*****   ***   *****</pre></td>
+            </tr>
+            <tr>
+                <td>BEA</td>
+                <td>2</td>
+                <td><pre>*****   **   ******</pre></td>
+            </tr>
+            <tr>
+                <td>BEB</td>
+                <td>1</td>
+                <td><pre>*****   **   *****</pre></td>
+            </tr>
+            <tr>
+                <td>BEF</td>
+                <td>2</td>
+                <td><pre>*****   **   *</pre></td>
+            </tr>
+            <tr>
+                <td>BFA</td>
+                <td>1</td>
+                <td><pre>*****   *   ******</pre></td>
+            </tr>
+            <tr>
+                <td>BFB</td>
+                <td>1</td>
+                <td><pre>*****   *   *****</pre></td>
+            </tr>
+            <tr>
+                <td>BFC</td>
+                <td>1</td>
+                <td><pre>*****   *   ****</pre></td>
+            </tr>
+            <tr>
+                <td>CBA</td>
+                <td>3</td>
+                <td><pre>****   *****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>CCA</td>
+                <td>4</td>
+                <td><pre>****   ****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>CCB</td>
+                <td>2</td>
+                <td><pre>****   ****   *****</pre></td>
+            </tr>
+            <tr>
+                <td>CDA</td>
+                <td>4</td>
+                <td><pre>****   ***   ******</pre></td>
+            </tr>
+            <tr>
+                <td>CDB</td>
+                <td>2</td>
+                <td><pre>****   ***   *****</pre></td>
+            </tr>
+            <tr>
+                <td>CDF</td>
+                <td>1</td>
+                <td><pre>****   ***   *</pre></td>
+            </tr>
+            <tr>
+                <td>CEA</td>
+                <td>4</td>
+                <td><pre>****   **   ******</pre></td>
+            </tr>
+            <tr>
+                <td>CEB</td>
+                <td>2</td>
+                <td><pre>****   **   *****</pre></td>
+            </tr>
+            <tr>
+                <td>CEF</td>
+                <td>3</td>
+                <td><pre>****   **   *</pre></td>
+            </tr>
+            <tr>
+                <td>CFA</td>
+                <td>2</td>
+                <td><pre>****   *   ******</pre></td>
+            </tr>
+            <tr>
+                <td>CFB</td>
+                <td>1</td>
+                <td><pre>****   *   *****</pre></td>
+            </tr>
+            <tr>
+                <td>DBA</td>
+                <td>3</td>
+                <td><pre>***   *****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>DCA</td>
+                <td>4</td>
+                <td><pre>***   ****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>DCB</td>
+                <td>2</td>
+                <td><pre>***   ****   *****</pre></td>
+            </tr>
+            <tr>
+                <td>DDA</td>
+                <td>5</td>
+                <td><pre>***   ***   ******</pre></td>
+            </tr>
+            <tr>
+                <td>DDB</td>
+                <td>3</td>
+                <td><pre>***   ***   *****</pre></td>
+            </tr>
+            <tr>
+                <td>DDC</td>
+                <td>1</td>
+                <td><pre>***   ***   ****</pre></td>
+            </tr>
+            <tr>
+                <td>DEA</td>
+                <td>5</td>
+                <td><pre>***   **   ******</pre></td>
+            </tr>
+            <tr>
+                <td>DEB</td>
+                <td>3</td>
+                <td><pre>***   **   *****</pre></td>
+            </tr>
+            <tr>
+                <td>DEC</td>
+                <td>1</td>
+                <td><pre>***   **   ****</pre></td>
+            </tr>
+            <tr>
+                <td>DEF</td>
+                <td>2</td>
+                <td><pre>***   **   *</pre></td>
+            </tr>
+            <tr>
+                <td>DFA</td>
+                <td>4</td>
+                <td><pre>***   *   ******</pre></td>
+            </tr>
+            <tr>
+                <td>DFB</td>
+                <td>3</td>
+                <td><pre>***   *   *****</pre></td>
+            </tr>
+            <tr>
+                <td>DFC</td>
+                <td>2</td>
+                <td><pre>***   *   ****</pre></td>
+            </tr>
+            <tr>
+                <td>EBA</td>
+                <td>3</td>
+                <td><pre>**   *****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>ECA</td>
+                <td>4</td>
+                <td><pre>**   ****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>ECB</td>
+                <td>2</td>
+                <td><pre>**   ****   *****</pre></td>
+            </tr>
+            <tr>
+                <td>EDA</td>
+                <td>5</td>
+                <td><pre>**   ***   ******</pre></td>
+            </tr>
+            <tr>
+                <td>EDB</td>
+                <td>3</td>
+                <td><pre>**   ***   *****</pre></td>
+            </tr>
+            <tr>
+                <td>EDC</td>
+                <td>1</td>
+                <td><pre>**   ***   ****</pre></td>
+            </tr>
+            <tr>
+                <td>EEA</td>
+                <td>5</td>
+                <td><pre>**   **   ******</pre></td>
+            </tr>
+            <tr>
+                <td>EEB</td>
+                <td>3</td>
+                <td><pre>**   **   *****</pre></td>
+            </tr>
+            <tr>
+                <td>EEC</td>
+                <td>1</td>
+                <td><pre>**   **   ****</pre></td>
+            </tr>
+            <tr>
+                <td>EFA</td>
+                <td>6</td>
+                <td><pre>**   *   ******</pre></td>
+            </tr>
+            <tr>
+                <td>EFB</td>
+                <td>5</td>
+                <td><pre>**   *   *****</pre></td>
+            </tr>
+            <tr>
+                <td>EFC</td>
+                <td>4</td>
+                <td><pre>**   *   ****</pre></td>
+            </tr>
+            <tr>
+                <td>EFD</td>
+                <td>2</td>
+                <td><pre>**   *   ***</pre></td>
+            </tr>
+            <tr>
+                <td>FBA</td>
+                <td>3</td>
+                <td><pre>*   *****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>FCA</td>
+                <td>4</td>
+                <td><pre>*   ****   ******</pre></td>
+            </tr>
+            <tr>
+                <td>FCB</td>
+                <td>2</td>
+                <td><pre>*   ****   *****</pre></td>
+            </tr>
+            <tr>
+                <td>FDA</td>
+                <td>5</td>
+                <td><pre>*   ***   ******</pre></td>
+            </tr>
+            <tr>
+                <td>FDB</td>
+                <td>3</td>
+                <td><pre>*   ***   *****</pre></td>
+            </tr>
+            <tr>
+                <td>FDC</td>
+                <td>1</td>
+                <td><pre>*   ***   ****</pre></td>
+            </tr>
+            <tr>
+                <td>FEA</td>
+                <td>5</td>
+                <td><pre>*   **   ******</pre></td>
+            </tr>
+            <tr>
+                <td>FEB</td>
+                <td>3</td>
+                <td><pre>*   **   *****</pre></td>
+            </tr>
+            <tr>
+                <td>FEC</td>
+                <td>1</td>
+                <td><pre>*   **   ****</pre></td>
+            </tr>
+            <tr>
+                <td>FFA</td>
+                <td>6</td>
+                <td><pre>*   *   ******</pre></td>
+            </tr>
+            <tr>
+                <td>FFB</td>
+                <td>5</td>
+                <td><pre>*   *   *****</pre></td>
+            </tr>
+            <tr>
+                <td>FFC</td>
+                <td>4</td>
+                <td><pre>*   *   ****</pre></td>
+            </tr>
+            <tr>
+                <td>FFD</td>
+                <td>2</td>
+                <td><pre>*   *   ***</pre></td>
+            </tr>
+        </table>
+    </div>
+    <br>
+</body>
+</html>
+
