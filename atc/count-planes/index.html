@@ -234,7 +234,8 @@ function calculate_separation(sequence, is_recat) {
     return total_separation;
 };
 
-function reset(is_recat) {
+function reset() {
+    const is_recat = document.getElementById("is_recat").checked;
     const select_num_planes = document.getElementById("num_planes");
     const num_planes = select_num_planes.options[select_num_planes.selectedIndex].value;
     let sequence = generate_sequence(num_planes, is_recat);
@@ -248,14 +249,14 @@ function reset(is_recat) {
 };
 
 function set_recat() {
-    reset(this.checked);
+    reset();
 };
 
 document.getElementById("reset").onclick = reset;
 document.getElementById("is_recat").onchange = set_recat;
 document.getElementById("num_planes").onchange = reset;
 
-reset(document.getElementById("is_recat"));
+reset();
 
 </script>
 </body>
