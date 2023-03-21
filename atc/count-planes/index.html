@@ -2,6 +2,10 @@
 <html>
 <head>
 <style>
+    #dec5or6 {
+        font-size: 2vw;
+    }
+
     #recat {
         font-size: 2vw;
     }
@@ -51,6 +55,14 @@
         <div id="recat">
             <input type="checkbox" id="is_recat" checked>
             <label for="is_recat">RECAT 1.5</label>
+        </div>
+        <br>
+        <div id="dec5or6">
+            <label>C⇽D/E: </label>
+            <input type="radio" id="dec5" name="dec5or6" checked="true">
+            <label for="dec5">5</label>
+            <input type="radio" id="dec6" name="dec5or6">
+            <label for="dec6">6</label>
         </div>
         <br>
         <label id="label_num_planes" for="num_planes">Number of planes: </label>
@@ -217,7 +229,8 @@ function calculate_separation(sequence, is_recat) {
                 }
             } else if (first === C) {
                 if (second === D || second === E) {
-                    separation = 5;
+                    const de_behind_c = document.getElementById("dec5").checked ? 5 : 6;
+                    separation = de_behind_c;
                 } else if (second === F) {
                     separation = 8;
                 }
@@ -236,6 +249,7 @@ function calculate_separation(sequence, is_recat) {
 
 function reset() {
     const is_recat = document.getElementById("is_recat").checked;
+    document.getElementById("dec5or6").style.visibility = is_recat ? "visible" : "collapse";
     const select_num_planes = document.getElementById("num_planes");
     const num_planes = select_num_planes.options[select_num_planes.selectedIndex].value;
     let sequence = generate_sequence(num_planes, is_recat);
@@ -244,6 +258,14 @@ function reset() {
     const text_answer = document.getElementById("answer")
     text_answer.innerText = "";
     document.getElementById("show_answer").onclick = function() {
+        text_answer.innerText = calculate_separation(sequence, is_recat);
+    };
+
+    document.getElementById("dec5").onclick = function() {
+        text_answer.innerText = calculate_separation(sequence, is_recat);
+    };
+
+    document.getElementById("dec6").onclick = function() {
         text_answer.innerText = calculate_separation(sequence, is_recat);
     };
 };
