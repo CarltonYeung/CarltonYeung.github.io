@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+</style>
+</head>
+<body>
+    <header>
+    </header>
+    <div>
+        <form onsubmit="handleSubmit(event)">
+            <label for="idInput">ID: </label>
+            <input type="text" id="idInput" name="idInput" required>
+            <button type="submit">Load</button>
+        </form>
+    </div>
+
+<script type="text/javascript">
+
+function handleSubmit(event) {
+    event.preventDefault();
+    const idInput = document.getElementById("idInput").value;
+    const response = fetchTaf(idInput);
+    console.log(response);
+}
+
+function fetchTaf(aerodromeId) {
+    const endpoint = `https://aviationweather.gov/api/data/taf?ids=${aerodromeId}&sep=true`;
+
+    fetch(endpoint, {
+        mode: "cors",
+        headers: {
+            "Accept": "*/*"
+        }
+    })
+    .then(response => {
+        console.log(response);
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .catch(error => {
+        console.error("There was a problem with the fetch operation:", error);
+    });
+}
+
+</script>
+</body>
+</html>
+
