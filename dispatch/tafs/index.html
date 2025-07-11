@@ -2,17 +2,40 @@
 <html>
 <head>
 <style>
+    body{
+        font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 16px;
+        background: #212529;
+        color: #DEE2E6;
+        margin: 0px 104px;
+        padding: 24px 12px;
+    }
+
+    #tafInput {
+        text-transform: uppercase;
+    }
+
+    #output {
+        white-space: pre-wrap;
+    }
 </style>
 </head>
 <body>
     <header>
     </header>
-    <div>
+    <div style="display: none">
         <form onsubmit="handleSubmit(event)">
             <label for="idInput">ID: </label>
             <input type="text" id="idInput" name="idInput" required>
             <button type="submit">Load</button>
         </form>
+    </div>
+    <div>
+        <label for="tafInput">TAF</label>
+        <br><br>
+        <textarea id="tafInput" name="tafInput" rows="20" cols="80" onkeyup="handleTafInput(this.value)"></textarea>
+        <br><br><br>
+        <div id="output"></div>
     </div>
 
 <script type="text/javascript">
@@ -21,7 +44,36 @@ function handleSubmit(event) {
     event.preventDefault();
     const idInput = document.getElementById("idInput").value;
     const response = fetchTaf(idInput);
-    console.log(response);
+}
+
+function handleTafInput(input) {
+    input = input.toUpperCase();
+    input = coalesceSpaces(input);
+    input = makeParagraph(input);
+    highlightTaf(input);
+}
+
+function highlightTaf(taf) {
+    let output = document.getElementById("output");
+    output.textContent = taf;
+}
+
+function makeParagraph(taf) {
+    let re = /(?:\s((?:BECMG|(?:FM\d{6})|RMK)\s))/g;
+    taf = taf.replaceAll(re, "\n  $1");
+
+    re = /(?:\s((?:PROB[34]0\sTEMPO)|(?:TEMPO)|(?:PROB[34]0)\s))/g;
+    taf = taf.replaceAll(re, "\n    $1");
+
+    re = /(?:TAF )?(\w{4}\s\d{6}Z)/g;
+    taf = taf.replaceAll(re, "\n\n$1");
+
+    return taf.trim();
+}
+
+function coalesceSpaces(taf) {
+    const re = /\s+/g;
+    return taf.replaceAll(re, " ");
 }
 
 function fetchTaf(aerodromeId) {
