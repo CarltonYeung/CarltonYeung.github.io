@@ -280,7 +280,7 @@ function appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit) {
         });
 
         if (parseInt(i.slice(-2)) == 23) {
-            i = endLimit.slice(0, 2) + "00";
+            i = String(parseInt(i.slice(0, 2)) + 1).padStart(2, "0") + "00";
         }
         else {
             i = i.slice(0, 2) + String(parseInt(i.slice(-2)) + 1).padStart(2, "0");
