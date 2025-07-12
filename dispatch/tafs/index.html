@@ -63,10 +63,17 @@
         visibility: visible;
     }
 
+    a {
+        color: lightskyblue;
+    }
+
 </style>
 </head>
 <body>
     <header>
+        <a href="../../directory">directory</a>
+        |
+        <a href="https://github.com/CarltonYeung/CarltonYeung.github.io/blob/master/dispatch/tafs/index.html">source code</a>
     </header>
     <div style="display: none">
         <form onsubmit="handleSubmit(event)">
@@ -77,7 +84,9 @@
     </div>
     <div id="main">
         <div>
-            <label for="tafInput">TAFs</label>
+            <h1 for="tafInput">TAFs</h1>
+            <br>
+            <a href="https://aviationweather.gov/data/taf/?ids=KJFK%2CCYYT%2CBIKF%2CLPLA%2CEINN%2CLFPG%2CLFPO%2CLSZH&metar=0&taf=1" target="_blank">Aviation Weather Center</a>
             <br><br>
             <textarea id="tafInput" name="tafInput" rows="30" cols="80" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
         </div>
