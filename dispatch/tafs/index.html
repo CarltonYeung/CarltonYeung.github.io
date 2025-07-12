@@ -2,7 +2,7 @@
 <html>
 <head>
 <style>
-    body{
+    body {
         font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         font-size: 16px;
         background: #212529;
@@ -12,12 +12,36 @@
     }
 
     #tafInput {
+        font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         text-transform: uppercase;
+        padding: 6px 12px;
+        font-size: 16px;
+        background: #2B3035;
+        color: #DEE2E6;
     }
 
-    #output {
+    #outputList {
+        display: grid;
+        grid-template-columns: 600px 600px;
+        gap: 32px;
         white-space: pre-wrap;
     }
+
+    .selectContainer {
+    }
+
+    .selectStart, .selectEnd {
+        font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        appearance: none;  /* remove dropdown arrow */
+        width: 100px;
+        margin:8px;
+        text-align: center;
+        padding: 6px 12px;
+        font-size: 16px;
+        background: #2B3035;
+        color: #DEE2E6;
+    }
+
 </style>
 </head>
 <body>
@@ -31,11 +55,12 @@
         </form>
     </div>
     <div>
-        <label for="tafInput">TAF</label>
+        <label for="tafInput">TAFs</label>
         <br><br>
-        <textarea id="tafInput" name="tafInput" rows="20" cols="80" onkeyup="handleTafInput(this.value)"></textarea>
+        <textarea id="tafInput" name="tafInput" rows="10" cols="80" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
         <br><br><br>
-        <div id="output"></div>
+        <div id="outputList">
+        </div>
     </div>
 
 <script type="text/javascript">
@@ -47,19 +72,91 @@ function handleSubmit(event) {
 }
 
 function handleTafInput(input) {
-    input = input.toUpperCase();
-    input = coalesceSpaces(input);
-    input = makeParagraph(input);
-    highlightTaf(input);
+    if (!input.trim()) {
+        let outputList = document.getElementById("outputList");
+        outputList.replaceChildren();
+        return;
+    }
+
+    let tafs = input.toUpperCase();
+    tafs = coalesceSpaces(tafs);
+    tafs = prettyTafs(tafs);
+    makeParagraphs(tafs);
 }
 
-function highlightTaf(taf) {
-    let output = document.getElementById("output");
-    output.textContent = taf;
+function makeParagraphs(tafs) {
+    let re = /(?=(?:\w{4}\s\d{6}Z\s))/g;
+    let tafsArray = tafs.split(re);
+
+    let outputList = document.getElementById("outputList");
+    outputList.replaceChildren();
+
+    tafsArray.forEach((tafText, index) => {
+        let tafDiv = document.createElement("div");
+        tafDiv.textContent = tafText;
+        tafDiv.className = "output";
+        outputList.appendChild(tafDiv);
+
+        let timeRangeDiv = document.createElement("div");
+        timeRangeDiv.className = "selectContainer";
+
+        let selectStart = document.createElement("select");
+        selectStart.size = 1;
+        selectStart.className = "selectStart";
+        timeRangeDiv.appendChild(selectStart);
+
+        let selectEnd = document.createElement("select");
+        selectEnd.size = 1;
+        selectEnd.className = "selectEnd";
+        timeRangeDiv.appendChild(selectEnd);
+
+        outputList.appendChild(timeRangeDiv);
+
+        let [startLimit, endLimit] = parseValidityPeriod(tafText);
+        appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit);
+    });
 }
 
-function makeParagraph(taf) {
-    let re = /(?:\s((?:BECMG|(?:FM\d{6})|RMK)\s))/g;
+function appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit) {
+    let i = startLimit;
+    let option;
+    while (i !== endLimit) {
+        [selectStart, selectEnd].forEach((select) => {
+            option = document.createElement("option")
+            option.innerText = i;
+            select.appendChild(option);
+        });
+
+        if (parseInt(i.slice(-2)) == 23) {
+            i = endLimit.slice(0, 2) + "00";
+        }
+        else {
+            i = i.slice(0, 2) + String(parseInt(i.slice(-2)) + 1).padStart(2, "0");
+        }
+    }
+
+    [selectStart, selectEnd].forEach((select) => {
+        option = document.createElement("option")
+        option.innerText = endLimit;
+        select.appendChild(option);
+    });
+}
+
+function parseValidityPeriod(tafText) {
+    let re = /^.*(\d{4})\/(\d{4}).*/;
+    let matches = tafText.match(re);
+    let [start, end] = [matches[1], matches[2]];
+    if (end.slice(-2) == "24") {
+        end = String(parseInt(end.slice(0, 2)) + 1).padStart(2, "0") + "00";
+    }
+    return [start, end];
+}
+
+function prettyTafs(taf) {
+    let re = /^TAF\b/g;
+    taf = taf.replace(re, "");
+
+    re = /(?:\s((?:BECMG|(?:FM\d{6})|RMK)\s))/g;
     taf = taf.replaceAll(re, "\n  $1");
 
     re = /(?:\s((?:PROB[34]0\sTEMPO)|(?:TEMPO)|(?:PROB[34]0)\s))/g;
