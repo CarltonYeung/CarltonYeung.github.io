@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <style>
     body {
         font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -22,9 +23,11 @@
 
     #outputList {
         display: grid;
-        grid-template-columns: 600px 600px;
+        grid-template-columns: 300px auto;
+        grid-template-rows: min-content;
         gap: 32px;
         white-space: pre-wrap;
+        padding: 32px;
     }
 
     .selectContainer {
@@ -42,6 +45,24 @@
         color: #DEE2E6;
     }
 
+    mark {
+        background-color: transparent;
+        color: #77DD77;
+    }
+
+    #main {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+    }
+
+    .hidden {
+        visibility: hidden;
+    }
+
+    .visible {
+        visibility: visible;
+    }
+
 </style>
 </head>
 <body>
@@ -54,11 +75,12 @@
             <button type="submit">Load</button>
         </form>
     </div>
-    <div>
-        <label for="tafInput">TAFs</label>
-        <br><br>
-        <textarea id="tafInput" name="tafInput" rows="10" cols="80" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
-        <br><br><br>
+    <div id="main">
+        <div>
+            <label for="tafInput">TAFs</label>
+            <br><br>
+            <textarea id="tafInput" name="tafInput" rows="30" cols="80" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
+        </div>
         <div id="outputList">
         </div>
     </div>
@@ -85,17 +107,18 @@ function handleTafInput(input) {
 }
 
 function makeParagraphs(tafs) {
-    let re = /(?=(?:\w{4}\s\d{6}Z\s))/g;
+    let re = /\n\n/g;
     let tafsArray = tafs.split(re);
+    console.log(tafsArray);
 
     let outputList = document.getElementById("outputList");
     outputList.replaceChildren();
 
     tafsArray.forEach((tafText, index) => {
         let tafDiv = document.createElement("div");
-        tafDiv.textContent = tafText;
+        tafDiv.innerHTML = tafText;
+        tafDiv.taf = tafText;
         tafDiv.className = "output";
-        outputList.appendChild(tafDiv);
 
         let timeRangeDiv = document.createElement("div");
         timeRangeDiv.className = "selectContainer";
@@ -108,13 +131,133 @@ function makeParagraphs(tafs) {
         let selectEnd = document.createElement("select");
         selectEnd.size = 1;
         selectEnd.className = "selectEnd";
+
+        let buttonSwap = document.createElement("button");
+        buttonSwap.innerHTML = '<i class="fa-solid fa-right-left"></i>';
+        buttonSwap.className = "hidden";
+        buttonSwap.onclick = function(event) {
+            [selectStart.value, selectEnd.value] = [selectEnd.value, selectStart.value]
+            highlightTaf(tafDiv, selectStart.value, selectEnd.value);
+            buttonSwap.className = "hidden";
+        };
+        selectStart.buttonSwap = buttonSwap;
+        selectEnd.buttonSwap = buttonSwap;
+
+        timeRangeDiv.appendChild(buttonSwap);
         timeRangeDiv.appendChild(selectEnd);
 
         outputList.appendChild(timeRangeDiv);
+        outputList.appendChild(tafDiv);
 
         let [startLimit, endLimit] = parseValidityPeriod(tafText);
         appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit);
+
+        selectStart.selectEnd = selectEnd;
+        selectEnd.selectStart = selectStart;
+        selectStart.tafDiv = tafDiv;
+        selectEnd.tafDiv = tafDiv;
+        selectStart.onchange = startChanged;
+        selectEnd.onchange = endChanged;
     });
+}
+
+function highlightTaf(tafDiv, start, end) {
+    let lines = tafDiv.taf.split("\n");
+
+    // first FM group
+    let baseCaseIdx;
+    for (let i = lines.length - 1; i >= 0; i--) {
+        let reFM = /^\s*FM(\d{6}\s+)/;
+        let fm = lines[i].match(reFM);
+        if (fm) {
+            let fmDDHHMM = fm[1];
+            let fmDDHH = fmDDHHMM.slice(0, 4);
+
+            if (parseInt(fmDDHH) < parseInt(end)) {
+                lines[i] = highlightLine(lines[i]);
+
+                if (parseInt(fmDDHH) <= parseInt(start)) {
+                    baseCaseIdx = i;
+                    break;
+                }
+            }
+        }
+    }
+    if (baseCaseIdx === undefined) {
+        baseCaseIdx = 0;
+        lines[0] = highlightLine(lines[0]);
+    }
+
+    // BECMG
+    for (let i = baseCaseIdx + 1; i < lines.length; i++) {  // start after base case
+        let re = /\bBECMG\s(\d{4})\/(\d{4})\b/;
+        let range = lines[i].match(re);
+        if (range) {
+            let startDDHH = range[1];
+
+            if (parseInt(startDDHH) < parseInt(end)) {
+                lines[i] = highlightLine(lines[i]);
+            }
+        }
+    }
+
+    if (start !== end) {
+
+        // TEMPO, PROB30, PROB40, PROB30 TEMPO, PROB40 TEMPO
+        for (let i = baseCaseIdx + 1; i < lines.length; i++) {  // start after base case
+            let re = /\b(?:(?:TEMPO|PROB30|PROB40|PROB30 TEMPO|PROB40 TEMPO))\s(\d{4})\/(\d{4})\b/;
+            let range = lines[i].match(re);
+            if (range) {
+                let startDDHH = range[1];
+                let endDDHH = range[2];
+
+                if ((parseInt(startDDHH) <= parseInt(start) && parseInt(start) < parseInt(endDDHH))  // start/end is on opposite sides of our start time
+                    || (parseInt(startDDHH) < parseInt(end) && parseInt(end) <= parseInt(endDDHH))  // start/end is on opposite sides of our end time
+                    || (parseInt(start) < parseInt(startDDHH) && parseInt(endDDHH) < parseInt(end)))  // fully within in our time period
+                    {
+                        lines[i] = highlightLine(lines[i]);
+                    }
+            }
+        }
+    }
+
+    tafDiv.innerHTML = lines.join("\n");
+}
+
+function unhighlightTaf(tafDiv) {
+    tafDiv.innerHTML = tafDiv.taf;
+}
+
+function highlightLine(line) {
+    return "<mark>" + line + "</mark>";
+}
+
+function startChanged(event) {
+    let selectStart = event.srcElement;
+    let selectEnd = selectStart.selectEnd;
+
+    if (parseInt(selectStart.value) > parseInt(selectEnd.value)) {
+        unhighlightTaf(selectStart.tafDiv);
+        selectStart.buttonSwap.className = "visible";
+    }
+    else {
+        highlightTaf(selectStart.tafDiv, selectStart.value, selectEnd.value);
+        selectStart.buttonSwap.className = "hidden";
+    }
+}
+
+function endChanged(event) {
+    let selectEnd = event.srcElement;
+    let selectStart = selectEnd.selectStart;
+
+    if (parseInt(selectStart.value) > parseInt(selectEnd.value)) {
+        unhighlightTaf(selectStart.tafDiv);
+        selectStart.buttonSwap.className = "visible";
+    }
+    else {
+        highlightTaf(selectStart.tafDiv, selectStart.value, selectEnd.value);
+        selectStart.buttonSwap.className = "hidden";
+    }
 }
 
 function appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit) {
@@ -153,16 +296,13 @@ function parseValidityPeriod(tafText) {
 }
 
 function prettyTafs(taf) {
-    let re = /^TAF\b/g;
-    taf = taf.replace(re, "");
-
-    re = /(?:\s((?:BECMG|(?:FM\d{6})|RMK)\s))/g;
+    let re = /(?:\s((?:BECMG|(?:FM\d{6})|RMK)\s))/g;
     taf = taf.replaceAll(re, "\n  $1");
 
     re = /(?:\s((?:PROB[34]0\sTEMPO)|(?:TEMPO)|(?:PROB[34]0)\s))/g;
     taf = taf.replaceAll(re, "\n    $1");
 
-    re = /(?:TAF )?(\w{4}\s\d{6}Z)/g;
+    re = /((?:TAF.*)?(\w{4}\s\d{6}Z))/g;
     taf = taf.replaceAll(re, "\n\n$1");
 
     return taf.trim();
