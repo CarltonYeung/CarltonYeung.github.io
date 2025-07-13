@@ -47,7 +47,7 @@
 
     mark {
         background-color: transparent;
-        color: #77DD77;
+        color: #77DD77;  /* TODO: consider sticking with white, but "unhighlighting" the irrelevant lines in the TAF */
     }
 
     #main {
@@ -84,7 +84,8 @@
     </div>
     <div id="main">
         <div>
-            <h1 for="tafInput">TAFs</h1>
+            <h1>TAFs</h1>
+            <h2 id="clock"></h2>
             <br>
             <a href="https://aviationweather.gov/data/taf/?ids=KJFK%2CCYYT%2CBIKF%2CLPLA%2CEINN%2CLFPG%2CLFPO%2CLSZH&metar=0&taf=1" target="_blank">Aviation Weather Center</a>
             <br><br>
@@ -229,6 +230,9 @@ function highlightTaf(tafDiv, start, end) {
             }
         }
     }
+    else {
+        // TODO
+    }
 
     tafDiv.innerHTML = lines.join("\n");
 }
@@ -342,6 +346,21 @@ function fetchTaf(aerodromeId) {
         console.error("There was a problem with the fetch operation:", error);
     });
 }
+
+function refresh_clock() {
+    const REFRESH_INTERVAL = 1000;
+    mytime = setTimeout("display_clock()", REFRESH_INTERVAL)
+}
+
+function display_clock() {
+    let now = new Date().toUTCString();
+    document.getElementById('clock').innerHTML = now;
+
+    const REFRESH_INTERVAL = 1000;
+    mytime = setTimeout("display_clock()", REFRESH_INTERVAL)
+}
+
+display_clock();
 
 </script>
 </body>
