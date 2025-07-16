@@ -37,8 +37,9 @@
         font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         appearance: none;  /* remove dropdown arrow */
         width: 100px;
-        margin:8px;
         text-align: center;
+        margin-left: 8px;
+        margin-right: 8px;
         padding: 6px 12px;
         font-size: 16px;
         background: #2B3035;
@@ -52,7 +53,7 @@
 
     #main {
         display: grid;
-        grid-template-columns: 1fr 1.5fr;
+        grid-template-columns: 1fr 3fr;
     }
 
     .hidden {
@@ -97,6 +98,9 @@
 
 <script type="text/javascript">
 
+let gTimeframes = {};
+
+
 function handleSubmit(event) {
     event.preventDefault();
     const idInput = document.getElementById("idInput").value;
@@ -128,6 +132,9 @@ function makeParagraphs(tafs) {
         tafDiv.innerHTML = tafText;
         tafDiv.taf = tafText;
         tafDiv.className = "output";
+        let re_icao = /(?:(?:TAF(?:\sCOR|\sAMD)?\s)?(\w{4})\s\d{6}Z)/;
+        let matches = tafText.match(re_icao);
+        tafDiv.icao = matches[1];
 
         let timeRangeDiv = document.createElement("div");
         timeRangeDiv.className = "selectContainer";
@@ -146,8 +153,9 @@ function makeParagraphs(tafs) {
         buttonSwap.className = "hidden";
         buttonSwap.onclick = function(event) {
             [selectStart.value, selectEnd.value] = [selectEnd.value, selectStart.value]
-            highlightTaf(tafDiv, selectStart.value, selectEnd.value);
             buttonSwap.className = "hidden";
+            highlightTaf(tafDiv, selectStart.value, selectEnd.value);
+            saveTimeframe(tafDiv.icao, selectStart, selectEnd);
         };
         selectStart.buttonSwap = buttonSwap;
         selectEnd.buttonSwap = buttonSwap;
@@ -160,6 +168,8 @@ function makeParagraphs(tafs) {
 
         let [startLimit, endLimit] = parseValidityPeriod(tafText);
         appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit);
+        selectStart.value = null;
+        selectEnd.value = null;
 
         selectStart.selectEnd = selectEnd;
         selectEnd.selectStart = selectStart;
@@ -167,10 +177,26 @@ function makeParagraphs(tafs) {
         selectEnd.tafDiv = tafDiv;
         selectStart.onchange = startChanged;
         selectEnd.onchange = endChanged;
+
+        if (tafDiv.icao in gTimeframes) {
+            let start = gTimeframes[tafDiv.icao].start;
+            let end = gTimeframes[tafDiv.icao].end;
+
+            if (parseInt(start) >= parseInt(startLimit) && parseInt(end) <= parseInt(endLimit)) {
+                selectStart.value = gTimeframes[tafDiv.icao].start;
+                selectEnd.value = gTimeframes[tafDiv.icao].end;
+                buttonSwap.className = parseInt(selectStart.value) <= parseInt(selectEnd.value) ? "hidden" : "visible";
+                highlightTaf(tafDiv, selectStart.value, selectEnd.value);
+            }
+        }
     });
 }
 
 function highlightTaf(tafDiv, start, end) {
+    if (parseInt(start) > parseInt(end)) {
+        return;
+    }
+
     let lines = tafDiv.taf.split("\n");
 
     // first FM group
@@ -244,9 +270,21 @@ function highlightLine(line) {
     return "<mark>" + line + "</mark>";
 }
 
+function saveTimeframe(icao, selectStart, selectEnd) {
+    gTimeframes[icao] = {
+        start: selectStart.value,
+        end: selectEnd.value
+    };
+}
+
 function startChanged(event) {
     let selectStart = event.srcElement;
     let selectEnd = selectStart.selectEnd;
+
+    if (selectEnd.options.selectedIndex < 0) {
+        let last = selectEnd.options[selectEnd.options.length - 1];
+        selectEnd.value = last.value;
+    }
 
     if (parseInt(selectStart.value) > parseInt(selectEnd.value)) {
         unhighlightTaf(selectStart.tafDiv);
@@ -256,12 +294,19 @@ function startChanged(event) {
         highlightTaf(selectStart.tafDiv, selectStart.value, selectEnd.value);
         selectStart.buttonSwap.className = "hidden";
     }
+
+    saveTimeframe(selectStart.tafDiv.icao, selectStart, selectEnd);
 }
 
 function endChanged(event) {
     let selectEnd = event.srcElement;
     let selectStart = selectEnd.selectStart;
 
+    if (selectStart.options.selectedIndex < 0) {
+        let first = selectStart.options[0];
+        selectStart.value = first.value;
+    }
+
     if (parseInt(selectStart.value) > parseInt(selectEnd.value)) {
         unhighlightTaf(selectStart.tafDiv);
         selectStart.buttonSwap.className = "visible";
@@ -270,6 +315,8 @@ function endChanged(event) {
         highlightTaf(selectStart.tafDiv, selectStart.value, selectEnd.value);
         selectStart.buttonSwap.className = "hidden";
     }
+
+    saveTimeframe(selectStart.tafDiv.icao, selectStart, selectEnd);
 }
 
 function appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit) {
