@@ -89,7 +89,7 @@
             <br>
             <a href="https://aviationweather.gov/data/taf/?ids=KJFK%2CCYYT%2CBIKF%2CLPLA%2CEINN%2CLFPG%2CLFPO%2CLSZH&metar=0&taf=1" target="_blank">Aviation Weather Center</a>
             <br><br>
-            <textarea id="tafInput" name="tafInput" rows="30" cols="80" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
+            <textarea id="tafInput" name="tafInput" rows="10" cols="50" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
         </div>
         <div id="outputList">
         </div>
@@ -119,7 +119,6 @@ function handleTafInput(input) {
 function makeParagraphs(tafs) {
     let re = /\n\n/g;
     let tafsArray = tafs.split(re);
-    console.log(tafsArray);
 
     let outputList = document.getElementById("outputList");
     outputList.replaceChildren();
@@ -309,14 +308,14 @@ function parseValidityPeriod(tafText) {
 }
 
 function prettyTafs(taf) {
-    let re = /(?:\s((?:BECMG|(?:FM\d{6})|RMK)\s))/g;
+    let re = /((TAF(\sCOR|\sAMD)?\s)?\w{4}\s\d{6}Z)/g;
+    taf = taf.replaceAll(re, "\n\n$1");
+
+    re = /(?:\s((?:BECMG|(?:FM\d{6})|RMK)\s))/g;
     taf = taf.replaceAll(re, "\n  $1");
 
     re = /(?:\s((?:PROB[34]0\sTEMPO)|(?:TEMPO)|(?:PROB[34]0)\s))/g;
     taf = taf.replaceAll(re, "\n    $1");
-
-    re = /((?:TAF.*)?(\w{4}\s\d{6}Z))/g;
-    taf = taf.replaceAll(re, "\n\n$1");
 
     return taf.trim();
 }
