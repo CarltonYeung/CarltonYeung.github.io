@@ -77,13 +77,6 @@
         |
         <a href="https://github.com/CarltonYeung/CarltonYeung.github.io/blob/master/dispatch/tafs/index.html">source code</a>
     </header>
-    <div style="display: none">
-        <form onsubmit="handleSubmit(event)">
-            <label for="idInput">ID: </label>
-            <input type="text" id="idInput" name="idInput" required>
-            <button type="submit">Load</button>
-        </form>
-    </div>
     <div id="main">
         <div>
             <h1>TAFs</h1>
@@ -373,41 +366,15 @@ function coalesceSpaces(taf) {
     return taf.replaceAll(re, " ");
 }
 
-function fetchTaf(aerodromeId) {
-    const endpoint = `https://aviationweather.gov/api/data/taf?ids=${aerodromeId}&sep=true`;
-
-    fetch(endpoint, {
-        mode: "cors",
-        headers: {
-            "Accept": "*/*"
-        }
-    })
-    .then(response => {
-        console.log(response);
-        if (!response.ok) {
-            throw new Error(`Response status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .catch(error => {
-        console.error("There was a problem with the fetch operation:", error);
-    });
-}
-
-function refresh_clock() {
-    const REFRESH_INTERVAL = 1000;
-    mytime = setTimeout("display_clock()", REFRESH_INTERVAL)
-}
-
-function display_clock() {
+function displayClock() {
     let now = new Date().toUTCString();
     document.getElementById('clock').innerHTML = now;
 
     const REFRESH_INTERVAL = 1000;
-    mytime = setTimeout("display_clock()", REFRESH_INTERVAL)
+    mytime = setTimeout("displayClock()", REFRESH_INTERVAL)
 }
 
-display_clock();
+displayClock();
 
 </script>
 </body>
