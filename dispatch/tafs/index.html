@@ -304,6 +304,7 @@ function highlightTaf(tafDiv, start, end) {
         return;
     }
 
+    unhighlightTaf(tafDiv);
     let lines = tafDiv.innerHTML.split("\n");
 
     // first FM group
