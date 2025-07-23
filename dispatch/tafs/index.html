@@ -20,6 +20,7 @@
         font-size: 16px;
         background: #2B3035;
         color: #DEE2E6;
+        margin-right: 36px;
     }
 
     #outputList {
@@ -47,7 +48,7 @@
         color: #DEE2E6;
     }
 
-    mark {
+    mark, mark > button.analyze-wind {
         background-color: transparent;
         color: #77DD77;  /* TODO: consider sticking with white, but "unhighlighting" the irrelevant lines in the TAF */
     }
@@ -69,6 +70,53 @@
         color: lightskyblue;
     }
 
+    button.analyze-wind {
+          /* remove button styling */
+        background: none;
+        border: none;
+        padding: 0px;
+        font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        color: #DEE2E6;
+        font-size: 16px;
+        cursor: help;  /* mouse hover */
+        user-select: text;  /* make text copyable */
+    }
+
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        border-color: #DEE2E6;
+        padding: 8px;
+    }
+    td:nth-child(1) {
+        text-align: right;
+    }
+    td:nth-child(2) {
+        text-align: right;
+    }
+    td:nth-child(3) {
+        text-align: right;
+    }
+    td:nth-child(4) {
+        text-align: right;
+    }
+
+    body {
+        min-height: 95vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+    }
+
+    header {
+        min-height: 50px;
+    }
+
+    footer {
+        margin-top: 50px;
+        min-height: 50px;
+        opacity: 50%;
+    }
+
 </style>
 </head>
 <body>
@@ -84,15 +132,32 @@
             <br>
             <a href="https://aviationweather.gov/data/taf/?ids=KJFK%2CCYYT%2CBIKF%2CLPLA%2CEINN%2CLFPG%2CLFPO%2CLSZH&metar=0&taf=1" target="_blank">Aviation Weather Center</a>
             <br><br>
-            <textarea id="tafInput" name="tafInput" rows="10" cols="50" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
+            <textarea id="tafInput" name="tafInput" rows="10" cols="60" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
+            <br><br><br><br>
+            <h2 id="wind-analysis"><span>wind analysis: </span><span id="wind-analysis-value">(click on a wind group)</span></h2>
+            <br>
+            <table id="wind-components">
+                <tr>
+                    <th id="column-runway">Runway</th>
+                    <th id="column-dimensions">Dimensions (ft)</th>
+                    <th id="column-headwind">Headwind</th>
+                    <th id="column-crosswind">Crosswind</th>
+                </tr>
+            </table>
+            <br>
+            <div>source of runway data: <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a></div>
         </div>
         <div id="outputList">
         </div>
     </div>
+    <footer>
+        note: this website is my own personal work. nothing here is ever guaranteed to be correct. explore at your own risk.
+    </footer>
 
 <script type="text/javascript">
 
 let gTimeframes = {};
+let gRunways = {};
 
 
 function handleSubmit(event) {
@@ -114,6 +179,54 @@ function handleTafInput(input) {
     makeParagraphs(tafs);
 }
 
+function clickableWind(text, icao) {
+    let re = /((\d{3})(\d{2})(?:G(\d{2}))?KT)/g;
+    clickableText = text.replaceAll(re, `<button class="analyze-wind" onclick="analyzeWind('${icao}', '$1')">$1</button>`);
+    return clickableText;
+}
+
+function analyzeWind(icao, windGroup) {
+    let re = /(\d{3})(\d{2})(?:G(\d{2}))?KT/;
+    let matches = windGroup.match(re);
+    let windDirection = parseInt(matches[1]);
+    let windKnots = parseInt(matches[3] || matches[2]);  // prioritize gusts
+
+    if (!gRunways[icao]) {
+        return;
+    }
+
+    document.getElementById("wind-analysis-value").innerHTML = `${icao} ${windGroup}`;
+
+    let table = document.getElementById("wind-components");
+    deleteRows(table);
+
+    for (let i = 0; i < gRunways[icao].length; i++) {
+        ["le", "he"].forEach((prefix) => {
+            let angle = windDirection - gRunways[icao][i][prefix + "_heading_degT"];
+            let headwindComponent = windKnots * Math.cos(angle * Math.PI / 180);
+            let isHeadwind = headwindComponent >= 0;
+            let headwindComponentStr = isHeadwind ? "HD" : "TL";
+            let crosswindComponent = windKnots * Math.sin(angle * Math.PI / 180);
+            let crosswindComponentStr = crosswindComponent >= 0 ? "R" : "L";
+
+            let row = table.insertRow();
+            row.style = isHeadwind ? "color: #77DD77" : "color: default";
+            let runway_ident_cell = row.insertCell()
+            runway_ident_cell.append(`${gRunways[icao][i][prefix + "_ident"]}`);
+            runway_ident_cell.title = `${gRunways[icao][i][prefix + "_heading_degT"]}° true`;
+            row.insertCell().append(`${gRunways[icao][i]["length_ft"]} x ${gRunways[icao][i]["width_ft"]}`);
+            row.insertCell().append(`${Math.abs(headwindComponent).toFixed(1)} ${headwindComponentStr}`);
+            row.insertCell().append(`${Math.abs(crosswindComponent).toFixed(1)} ${crosswindComponentStr}`);
+        });
+    }
+}
+
+function deleteRows(table) {
+    for (let i = table.rows.length - 1; i > 0; i--) {
+        table.deleteRow(i);
+    }
+}
+
 function makeParagraphs(tafs) {
     let re = /\n\n/g;
     let tafsArray = tafs.split(re);
@@ -123,12 +236,12 @@ function makeParagraphs(tafs) {
 
     tafsArray.forEach((tafText, index) => {
         let tafDiv = document.createElement("div");
-        tafDiv.innerHTML = tafText;
-        tafDiv.taf = tafText;
-        tafDiv.className = "output";
         let re_icao = /(?:(?:TAF(?:\sCOR|\sAMD)?\s)?(\w{4})\s\d{6}Z)/;
         let matches = tafText.match(re_icao);
         tafDiv.icao = matches[1];
+        tafDiv.innerHTML = clickableWind(tafText, tafDiv.icao);
+        tafDiv.taf = tafText;
+        tafDiv.className = "output";
 
         let timeRangeDiv = document.createElement("div");
         timeRangeDiv.className = "selectContainer";
@@ -191,7 +304,7 @@ function highlightTaf(tafDiv, start, end) {
         return;
     }
 
-    let lines = tafDiv.taf.split("\n");
+    let lines = tafDiv.innerHTML.split("\n");
 
     // first FM group
     let baseCaseIdx;
@@ -257,7 +370,7 @@ function highlightTaf(tafDiv, start, end) {
 }
 
 function unhighlightTaf(tafDiv) {
-    tafDiv.innerHTML = tafDiv.taf;
+    tafDiv.innerHTML = clickableWind(tafDiv.taf, tafDiv.icao);
 }
 
 function highlightLine(line) {
@@ -373,6 +486,54 @@ function displayClock() {
     const REFRESH_INTERVAL = 1000;
     mytime = setTimeout("displayClock()", REFRESH_INTERVAL)
 }
+
+async function fetchRunwayDatabase() {
+    const URL = "https://raw.githubusercontent.com/davidmegginson/ourairports-data/refs/heads/main/runways.csv";
+
+    try {
+        const response = await fetch(URL);
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+
+        const DATA = await response.text();
+        const LINES = DATA.split("\n");
+
+        for (let i = 1; i < LINES.length; i++) {
+            line = LINES[i].split(",");
+            const AIRPORT_IDENT = 2;
+            const LENGTH_FT = 3;
+            const WIDTH_FT = 4;
+            const LE_IDENT = 8;
+            const LE_HEADING_DEGT = 12;
+            const HE_IDENT = 14;
+            const HE_HEADING_DEGT = 18;
+
+            if (!line[AIRPORT_IDENT]) {
+                continue;
+            }
+
+            const ident = line[AIRPORT_IDENT].replaceAll("\"", "");
+
+            let runways = gRunways[ident] ? gRunways[ident] : [];
+            runways.push({
+                "le_ident": line[LE_IDENT].replaceAll("\"", ""),
+                "length_ft": line[LENGTH_FT],
+                "width_ft": line[WIDTH_FT],
+                "le_heading_degT": line[LE_HEADING_DEGT],
+                "he_ident": line[HE_IDENT].replaceAll("\"", ""),
+                "he_heading_degT": line[HE_HEADING_DEGT]
+            });
+
+            gRunways[ident] = runways;
+        }
+
+    } catch (error) {
+        console.error(error.message);
+    }
+}
+
+fetchRunwayDatabase();
 
 displayClock();
 

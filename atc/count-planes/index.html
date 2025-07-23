@@ -44,6 +44,21 @@
         font-size: 4vw;
         text-align: center;
     }
+
+    body {
+        min-height: 95vh;
+        display: grid;
+        grid-template-rows: auto auto auto auto 1fr auto;
+    }
+
+    header {
+        min-height: 50px;
+    }
+
+    footer {
+        margin-top: 50px;
+        min-height: 50px;
+    }
 </style>
 </head>
 <body>
@@ -85,6 +100,9 @@
         <button id ="reset">Reset</button>
     </div>
     <p id="answer"></p>
+    <footer>
+        note: this website is my own personal work. nothing here is ever guaranteed to be correct. explore at your own risk.
+    </footer>
 
 <script type="text/javascript">
 
