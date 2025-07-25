@@ -138,10 +138,10 @@
             <br>
             <table id="wind-components">
                 <tr>
-                    <th id="column-runway">Runway</th>
-                    <th id="column-dimensions">Dimensions (ft)</th>
-                    <th id="column-headwind">Headwind</th>
-                    <th id="column-crosswind">Crosswind</th>
+                    <th id="column-runway">runway</th>
+                    <th id="column-dimensions">dimensions (ft)</th>
+                    <th id="column-headwind">head/tail (kts)</th>
+                    <th id="column-crosswind">crosswind (kts)</th>
                 </tr>
             </table>
             <br>
@@ -154,6 +154,7 @@
         note: this website is my own personal work. nothing here is ever guaranteed to be correct. explore at your own risk.
     </footer>
 
+<script src="./papaparse.min.js"></script>
 <script type="text/javascript">
 
 let gTimeframes = {};
@@ -501,7 +502,7 @@ async function fetchRunwayDatabase() {
         const LINES = DATA.split("\n");
 
         for (let i = 1; i < LINES.length; i++) {
-            line = LINES[i].split(",");
+            let line = LINES[i].split(",");
             const AIRPORT_IDENT = 2;
             const LENGTH_FT = 3;
             const WIDTH_FT = 4;
@@ -534,7 +535,49 @@ async function fetchRunwayDatabase() {
     }
 }
 
-fetchRunwayDatabase();
+function readCsv() {
+    Papa.parse('runways.csv', {
+        download: true,
+        complete: function(results, file) {
+            // console.log("Parsing complete:", results, file);
+
+            let LINES = results.data;
+
+            for (let i = 1; i < LINES.length; i++) {
+                let line = LINES[i];
+                const AIRPORT_IDENT = 2;
+                const LENGTH_FT = 3;
+                const WIDTH_FT = 4;
+                const LE_IDENT = 8;
+                const LE_HEADING_DEGT = 12;
+                const HE_IDENT = 14;
+                const HE_HEADING_DEGT = 18;
+
+                if (!line[AIRPORT_IDENT]) {
+                    continue;
+                }
+
+                const ident = line[AIRPORT_IDENT].replaceAll("\"", "");
+
+                let runways = gRunways[ident] ? gRunways[ident] : [];
+                runways.push({
+                    "le_ident": line[LE_IDENT].replaceAll("\"", ""),
+                    "length_ft": line[LENGTH_FT],
+                    "width_ft": line[WIDTH_FT],
+                    "le_heading_degT": line[LE_HEADING_DEGT],
+                    "he_ident": line[HE_IDENT].replaceAll("\"", ""),
+                    "he_heading_degT": line[HE_HEADING_DEGT]
+                });
+
+                gRunways[ident] = runways;
+            }
+        }
+    });
+}
+
+readCsv();
+
+// fetchRunwayDatabase();
 
 displayClock();
 
