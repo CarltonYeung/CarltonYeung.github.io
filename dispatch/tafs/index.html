@@ -189,19 +189,29 @@ function handleTafInput(input) {
 }
 
 function clickableWind(text, icao) {
-    let re = /((\d{3})(\d{2})(?:G(\d{2}))?KT)/g;
+    let re = /((\d{3})(\d{2})(?:G(\d+))?(?:KT|MPS))/g;
     clickableText = text.replaceAll(re, `<button class="analyze-wind" onclick="analyzeWind('${icao}', '$1')">$1</button>`);
     return clickableText;
 }
 
-function analyzeWind(icao, windGroup) {
-    let re = /(\d{3})(\d{2})(?:G(\d{2}))?KT/;
-    let matches = windGroup.match(re);
-    let windDirection = parseInt(matches[1]);
-    let windKnots = parseInt(matches[3] || matches[2]);  // prioritize gusts
+function mpsToKts(mps) {
+    const KTS_PER_MPS = 1.94384;
+    return mps * KTS_PER_MPS;
+}
 
+function analyzeWind(icao, windGroup) {
     if (!gRunways[icao]) {
         return;
+    }
+
+    let re = /(\d{3})(\d{2})(?:G(\d+))?(KT|MPS)/;
+    let matches = windGroup.match(re);
+    let windDirection = parseInt(matches[1]);
+    let windMagnitude = parseInt(matches[3] || matches[2]);  // prioritize gusts
+
+    let windKnots = windMagnitude;
+    if (matches[4] === "MPS") {
+        windKnots = mpsToKts(windMagnitude);
     }
 
     document.getElementById("wind-analysis-value").innerHTML = `${icao} ${windGroup}`;
