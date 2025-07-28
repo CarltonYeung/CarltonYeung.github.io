@@ -147,7 +147,7 @@
                     <tr>
                         <th id="column-runway">runway</th>
                         <th id="column-dimensions">dimensions (ft)</th>
-                        <th id="column-headwind">head/tail (kts)</th>
+                        <th id="column-headwind">headwind (kts)</th>
                         <th id="column-crosswind">crosswind (kts)</th>
                     </tr>
                 </table>
@@ -214,7 +214,6 @@ function analyzeWind(icao, windGroup) {
             let angle = windDirection - gRunways[icao][i][prefix + "_heading_degT"];
             let headwindComponent = windKnots * Math.cos(angle * Math.PI / 180);
             let isHeadwind = headwindComponent >= 0;
-            let headwindComponentStr = isHeadwind ? "HD" : "TL";
             let crosswindComponent = windKnots * Math.sin(angle * Math.PI / 180);
             let crosswindComponentStr = crosswindComponent >= 0 ? "R" : "L";
 
@@ -223,8 +222,17 @@ function analyzeWind(icao, windGroup) {
             let runway_ident_cell = row.insertCell()
             runway_ident_cell.append(`${gRunways[icao][i][prefix + "_ident"]}`);
             runway_ident_cell.title = `${gRunways[icao][i][prefix + "_heading_degT"]}° true`;
-            row.insertCell().append(`${gRunways[icao][i]["length_ft"]} x ${gRunways[icao][i]["width_ft"]}`);
-            row.insertCell().append(`${Math.abs(headwindComponent).toFixed(1)} ${headwindComponentStr}`);
+
+            if (gRunways[icao][i][prefix + "_displaced_threshold_ft"]) {
+                let runway_dimensions_cell = row.insertCell();
+                runway_dimensions_cell.append(`${gRunways[icao][i]["length_ft"]}* x ${gRunways[icao][i]["width_ft"]}`);
+                runway_dimensions_cell.title = `${gRunways[icao][i][prefix + "_displaced_threshold_ft"]} ft displaced threshold`;
+            }
+            else {
+                row.insertCell().append(`${gRunways[icao][i]["length_ft"]} x ${gRunways[icao][i]["width_ft"]}`);
+            }
+
+            row.insertCell().append(`${headwindComponent.toFixed(1)}`);
             row.insertCell().append(`${Math.abs(crosswindComponent).toFixed(1)} ${crosswindComponentStr}`);
         });
     }
@@ -556,12 +564,19 @@ function readCsv() {
                 const AIRPORT_IDENT = 2;
                 const LENGTH_FT = 3;
                 const WIDTH_FT = 4;
+                const CLOSED = 7;
                 const LE_IDENT = 8;
                 const LE_HEADING_DEGT = 12;
+                const LE_DISPLACED_THRESHOLD_FT = 13;
                 const HE_IDENT = 14;
                 const HE_HEADING_DEGT = 18;
+                const HE_DISPLACED_THRESHOLD_FT = 19;
 
                 if (!line[AIRPORT_IDENT]) {
+                    continue;
+                }
+
+                if (line[CLOSED] == "1") {
                     continue;
                 }
 
@@ -573,8 +588,10 @@ function readCsv() {
                     "length_ft": line[LENGTH_FT],
                     "width_ft": line[WIDTH_FT],
                     "le_heading_degT": line[LE_HEADING_DEGT],
+                    "le_displaced_threshold_ft": line[LE_DISPLACED_THRESHOLD_FT],
                     "he_ident": line[HE_IDENT].replaceAll("\"", ""),
-                    "he_heading_degT": line[HE_HEADING_DEGT]
+                    "he_heading_degT": line[HE_HEADING_DEGT],
+                    "he_displaced_threshold_ft": line[HE_DISPLACED_THRESHOLD_FT],
                 });
 
                 gRunways[ident] = runways;
