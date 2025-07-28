@@ -38,7 +38,7 @@
     .selectStart, .selectEnd {
         font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         appearance: none;  /* remove dropdown arrow */
-        width: 100px;
+        width: 80px;
         text-align: center;
         margin-left: 8px;
         margin-right: 8px;
@@ -80,6 +80,12 @@
         font-size: 16px;
         cursor: help;  /* mouse hover */
         user-select: text;  /* make text copyable */
+    }
+
+    #left {
+        top: 80px;
+        position: sticky;
+        height: fit-content;
     }
 
     table, th, td {
@@ -126,26 +132,28 @@
         <a href="https://github.com/CarltonYeung/CarltonYeung.github.io/blob/master/dispatch/tafs/index.html">source code</a>
     </header>
     <div id="main">
-        <div>
+        <div id="left">
             <h1>TAFs</h1>
             <h2 id="clock"></h2>
             <br>
             <a href="https://aviationweather.gov/data/taf/?ids=KJFK%2CCYYT%2CBIKF%2CLPLA%2CEINN%2CLFPG%2CLFPO%2CLSZH&metar=0&taf=1" target="_blank">Aviation Weather Center</a>
             <br><br>
-            <textarea id="tafInput" name="tafInput" rows="10" cols="60" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
+            <textarea id="tafInput" name="tafInput" rows="10" cols="50" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
             <br><br><br><br>
-            <h2 id="wind-analysis"><span>wind analysis: </span><span id="wind-analysis-value">(click on a wind group)</span></h2>
-            <br>
-            <table id="wind-components">
-                <tr>
-                    <th id="column-runway">runway</th>
-                    <th id="column-dimensions">dimensions (ft)</th>
-                    <th id="column-headwind">head/tail (kts)</th>
-                    <th id="column-crosswind">crosswind (kts)</th>
-                </tr>
-            </table>
-            <br>
-            <div>source of runway data: <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a></div>
+            <div id="wind-analysis">
+                <h2><span>wind analysis: </span><span id="wind-analysis-value">(click on a wind group)</span></h2>
+                <br>
+                <table id="wind-components">
+                    <tr>
+                        <th id="column-runway">runway</th>
+                        <th id="column-dimensions">dimensions (ft)</th>
+                        <th id="column-headwind">head/tail (kts)</th>
+                        <th id="column-crosswind">crosswind (kts)</th>
+                    </tr>
+                </table>
+                <br>
+                <div>source of runway data: <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a></div>
+            </div>
         </div>
         <div id="outputList">
         </div>
