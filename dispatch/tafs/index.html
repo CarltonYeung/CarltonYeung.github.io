@@ -304,17 +304,19 @@ function makeParagraphs(tafs) {
         outputList.appendChild(timeRangeDiv);
         outputList.appendChild(tafDiv);
 
+        selectStart.selectEnd = selectEnd;
+        selectEnd.selectStart = selectStart;
+        selectStart.tafDiv = tafDiv;
+        tafDiv.selectStart = selectStart;
+        selectEnd.tafDiv = tafDiv;
+        tafDiv.selectEnd = selectEnd;
+        selectStart.onchange = startChanged;
+        selectEnd.onchange = endChanged;
+
         let [startLimit, endLimit] = parseValidityPeriod(tafText);
         appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit);
         selectStart.value = null;
         selectEnd.value = null;
-
-        selectStart.selectEnd = selectEnd;
-        selectEnd.selectStart = selectStart;
-        selectStart.tafDiv = tafDiv;
-        selectEnd.tafDiv = tafDiv;
-        selectStart.onchange = startChanged;
-        selectEnd.onchange = endChanged;
 
         if (tafDiv.icao in gTimeframes) {
             let start = gTimeframes[tafDiv.icao].start;
@@ -330,8 +332,20 @@ function makeParagraphs(tafs) {
     });
 }
 
+function indexOfDDHH(tafDiv, ddhh) {
+    ddhh = convert24to00(ddhh, tafDiv.lastDD);
+    let index = -1;
+    for (let i = 0; i < tafDiv.selectStart.options.length; i++) {
+        if (ddhh === tafDiv.selectStart.options[i].value) {
+            index = i;
+        }
+    }
+    console.assert(index >= 0, `${ddhh} is not an option in the dropdown`);
+    return index;
+}
+
 function highlightTaf(tafDiv, start, end) {
-    if (parseInt(start) > parseInt(end)) {
+    if (indexOfDDHH(tafDiv, start) > indexOfDDHH(tafDiv, end)) {
         return;
     }
 
@@ -345,12 +359,12 @@ function highlightTaf(tafDiv, start, end) {
         let fm = lines[i].match(reFM);
         if (fm) {
             let fmDDHHMM = fm[1];
-            let fmDDHH = fmDDHHMM.slice(0, 4);
+            let fmDDHH = fmDDHHMM.slice(0, 4);  // bug: FM011930 is considered to start from 1900; can result in an earlier FM line not highlighted
 
-            if (parseInt(fmDDHH) < parseInt(end)) {
+            if (indexOfDDHH(tafDiv, fmDDHH) < indexOfDDHH(tafDiv, end)) {
                 lines[i] = highlightLine(lines[i]);
 
-                if (parseInt(fmDDHH) <= parseInt(start)) {
+                if (indexOfDDHH(tafDiv, fmDDHH) <= indexOfDDHH(tafDiv, start)) {
                     baseCaseIdx = i;
                     break;
                 }
@@ -369,7 +383,7 @@ function highlightTaf(tafDiv, start, end) {
         if (range) {
             let startDDHH = range[1];
 
-            if (parseInt(startDDHH) < parseInt(end)) {
+            if (indexOfDDHH(tafDiv, startDDHH) < indexOfDDHH(tafDiv, end)) {
                 lines[i] = highlightLine(lines[i]);
             }
         }
@@ -385,9 +399,9 @@ function highlightTaf(tafDiv, start, end) {
                 let startDDHH = range[1];
                 let endDDHH = range[2];
 
-                if ((parseInt(startDDHH) <= parseInt(start) && parseInt(start) < parseInt(endDDHH))  // start/end is on opposite sides of our start time
-                    || (parseInt(startDDHH) < parseInt(end) && parseInt(end) <= parseInt(endDDHH))  // start/end is on opposite sides of our end time
-                    || (parseInt(start) < parseInt(startDDHH) && parseInt(endDDHH) < parseInt(end)))  // fully within in our time period
+                if ((indexOfDDHH(tafDiv, startDDHH) <= indexOfDDHH(tafDiv, start) && indexOfDDHH(tafDiv, start) < indexOfDDHH(tafDiv, endDDHH))  // start/end is on opposite sides of our start time
+                    || (indexOfDDHH(tafDiv, startDDHH) < indexOfDDHH(tafDiv, end) && indexOfDDHH(tafDiv, end) <= indexOfDDHH(tafDiv, endDDHH))  // start/end is on opposite sides of our end time
+                    || (indexOfDDHH(tafDiv, start) < indexOfDDHH(tafDiv, startDDHH) && indexOfDDHH(tafDiv, endDDHH) < indexOfDDHH(tafDiv, end)))  // fully within in our time period
                     {
                         lines[i] = highlightLine(lines[i]);
                     }
@@ -395,7 +409,20 @@ function highlightTaf(tafDiv, start, end) {
         }
     }
     else {
-        // TODO
+        // TEMPO, PROB30, PROB40, PROB30 TEMPO, PROB40 TEMPO
+        for (let i = baseCaseIdx + 1; i < lines.length; i++) {  // start after base case
+            let re = /\b(?:(?:TEMPO|PROB30|PROB40|PROB30 TEMPO|PROB40 TEMPO))\s(\d{4})\/(\d{4})\b/;
+            let range = lines[i].match(re);
+            if (range) {
+                let startDDHH = range[1];
+                let endDDHH = range[2];
+
+                // only if it's undeniably within the time frame
+                if ((indexOfDDHH(tafDiv, startDDHH) < indexOfDDHH(tafDiv, start) && indexOfDDHH(tafDiv, start) < indexOfDDHH(tafDiv, endDDHH))) {
+                    lines[i] = highlightLine(lines[i]);
+                }
+            }
+        }
     }
 
     tafDiv.innerHTML = lines.join("\n");
@@ -425,7 +452,7 @@ function startChanged(event) {
         selectEnd.value = last.value;
     }
 
-    if (parseInt(selectStart.value) > parseInt(selectEnd.value)) {
+    if (selectStart.options.selectedIndex > selectEnd.options.selectedIndex) {
         unhighlightTaf(selectStart.tafDiv);
         selectStart.buttonSwap.className = "visible";
     }
@@ -446,7 +473,7 @@ function endChanged(event) {
         selectStart.value = first.value;
     }
 
-    if (parseInt(selectStart.value) > parseInt(selectEnd.value)) {
+    if (selectStart.options.selectedIndex > selectEnd.options.selectedIndex) {
         unhighlightTaf(selectStart.tafDiv);
         selectStart.buttonSwap.className = "visible";
     }
@@ -458,39 +485,151 @@ function endChanged(event) {
     saveTimeframe(selectStart.tafDiv.icao, selectStart, selectEnd);
 }
 
-function appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit) {
-    let i = startLimit;
+function isDDHHequal(ddhh1, ddhh2) {
+    if (ddhh1 === ddhh2) {
+        return true;
+    }
+
+    // assumes no rollover necessary
+    // 3124 == 3200
+    return convert24to00(ddhh1) === convert24to00(ddhh2);
+}
+
+function incrementDDHH(ddhh, lastDD) {
+    let dd = ddhh.slice(0, 2);
+    let hh = ddhh.slice(-2);
+
+    // pre-process
+    if (hh === "24") {
+        if (dd === lastDD) {
+            dd = "01";
+            hh = "00";
+        }
+        else {
+            dd = String(parseInt(dd) + 1).padStart(2, "0");
+            hh = "00";
+        }
+    }
+
+    // increment
+    hh = String(parseInt(hh) + 1).padStart(2, "0");
+
+    // post-process
+    if (hh === "24") {
+        if (dd === lastDD) {
+            dd = "01";
+            hh = "00";
+        }
+        else {
+            dd = String(parseInt(dd) + 1).padStart(2, "0");
+            hh = "00";
+        }
+    }
+
+    return dd + hh;
+}
+
+function add24HH(ddhh, lastDD) {
+    for (let i = 0; i < 24; i++) {
+        ddhh = incrementDDHH(ddhh, lastDD);
+    }
+
+    return ddhh;
+}
+
+function add30HH(ddhh, lastDD) {
+    for (let i = 0; i < 30; i++) {
+        ddhh = incrementDDHH(ddhh, lastDD);
+    }
+
+    return ddhh;
+}
+
+function getLastDD(startDDHH, endDDHH) {
+    let startDD = startDDHH.slice(0, 2);
+    let endDD = endDDHH.slice(0, 2);
+    let lastDD;
+
+    if (parseInt(startDD) <= parseInt(endDD)) {
+        lastDD = endDD;  // doesn't really matter because no rollover is necessary to get from startDDHH to endDDHH
+    }
+    else {
+        // case 1: last day is startDD, 24h taf
+        // case 2: last day is startDD, 30h taf
+        // case 3: last day is startDD + 1, 24h taf
+        // case 4: last day is startDD + 1, 30h taf
+        // problem: there are sometimes tafs like 3021/0124 which aren't any of the above
+
+        if (isDDHHequal(endDDHH, add24HH(startDDHH, startDD))) {
+            lastDD = startDD;
+        }
+        else if (isDDHHequal(endDDHH, add30HH(startDDHH, startDD))) {
+            lastDD = startDD;
+        }
+        else if (isDDHHequal(endDDHH, add24HH(startDDHH, String(parseInt(startDD) + 1).padStart(2, "0")))) {
+            lastDD = String(parseInt(startDD) + 1).padStart(2, "0");
+        }
+        else if (isDDHHequal(endDDHH, add30HH(startDDHH, String(parseInt(startDD) + 1).padStart(2, "0")))) {
+            lastDD = String(parseInt(startDD) + 1).padStart(2, "0");
+        }
+        else {
+            console.log(`unable parsing taf period ${startDDHH}/${endDDHH}`);
+            return;
+        }
+    }
+
+    return lastDD;
+}
+
+function appendTimeRangeOptions(selectStart, selectEnd, startDDHH, endDDHH) {
+    let ddhh = startDDHH;
     let option;
-    while (i !== endLimit) {
+
+    const LAST_DD = getLastDD(startDDHH, endDDHH);
+    if (!LAST_DD) {
+        return;
+    }
+    selectStart.tafDiv.lastDD = LAST_DD;
+
+    while (!isDDHHequal(ddhh, endDDHH)) {
         [selectStart, selectEnd].forEach((select) => {
             option = document.createElement("option")
-            option.innerText = i;
+            option.innerText = ddhh;
             select.appendChild(option);
         });
 
-        if (parseInt(i.slice(-2)) == 23) {
-            i = String(parseInt(i.slice(0, 2)) + 1).padStart(2, "0") + "00";
-        }
-        else {
-            i = i.slice(0, 2) + String(parseInt(i.slice(-2)) + 1).padStart(2, "0");
-        }
+        ddhh = incrementDDHH(ddhh, LAST_DD);
     }
 
     [selectStart, selectEnd].forEach((select) => {
         option = document.createElement("option")
-        option.innerText = endLimit;
+        option.innerText = endDDHH;
         select.appendChild(option);
     });
+}
+
+function convert24to00(ddhh, lastDD) {
+    // 0124 becomes 0200, 3124 becomes 3200
+    let dd = ddhh.slice(0, 2);
+    let hh = ddhh.slice(-2);
+    if (hh === "24") {
+        if (lastDD && dd === lastDD) {
+            ddhh = "0100";
+        }
+        else {
+            dd = String(parseInt(dd) + 1).padStart(2, "0");
+            ddhh = dd + "00";
+        }
+    }
+    return ddhh;
 }
 
 function parseValidityPeriod(tafText) {
     let re = /^.*(\d{4})\/(\d{4}).*/;
     let matches = tafText.match(re);
-    let [start, end] = [matches[1], matches[2]];
-    if (end.slice(-2) == "24") {
-        end = String(parseInt(end.slice(0, 2)) + 1).padStart(2, "0") + "00";
-    }
-    return [start, end];
+    let [startDDHH, endDDHH] = [matches[1], matches[2]];
+    endDDHH = convert24to00(endDDHH);
+    return [startDDHH, endDDHH];
 }
 
 function prettyTafs(taf) {
