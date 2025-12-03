@@ -13,7 +13,7 @@
         padding: 24px 12px;
     }
 
-    #tafInput {
+    #taf-input {
         font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         text-transform: uppercase;
         padding: 6px 12px;
@@ -141,11 +141,13 @@
         <div id="left">
             <h1>TAFs</h1>
             <h2 id="clock"></h2>
-            <br>
-            <a href="https://aviationweather.gov/data/taf/" target="_blank">Aviation Weather Center</a>
             <br><br>
-            <textarea id="tafInput" name="tafInput" rows="10" cols="50" onkeyup="handleTafInput(this.value)" placeholder="Paste TAFs"></textarea>
-            <br><br><br><br>
+            <form onsubmit="return fetchTafs()">
+                <input type="text" id="taf-input" size="52" name="taf-input" placeholder="4-letter ICAO stations"></input>
+            </form>
+            <p id="last-updated"></p>
+            <div>source of tafs: <a id="awc-link" href="https://aviationweather.gov/data/taf/" target="_blank">Aviation Weather Center</a></div> <!-- TODO: change based on input -->
+            <br><br><br>
             <div id="wind-analysis">
                 <h2><span>wind: </span><span id="wind-analysis-value">(click on a wind group)</span></h2>
                 <br>
@@ -157,8 +159,7 @@
                         <th id="column-crosswind">crosswind (kts)</th>
                     </tr>
                 </table>
-                <br>
-                <div>source of runway data: <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a></div>
+                <p>source of runway data: <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a></p>
             </div>
         </div>
         <div id="outputList">
@@ -753,6 +754,51 @@ function fetchRunwayDatabaseOffline() {
         }
     });
 }
+
+function lastUpdated() {
+    let now = new Date().toUTCString();
+    document.getElementById("last-updated").textContent = `last updated: ${now}`;
+}
+
+function normalizeIcaoInput(input) {
+    let ids = input.split(/[\W/]+/);
+    ids = ids.filter((id) => id !== "");
+    ids = [...new Set(ids)];
+    idsString = ids.join(",");
+    document.getElementById("taf-input").value = idsString;
+    document.getElementById("awc-link").href = `https://aviationweather.gov/data/taf/?ids=${idsString}`;
+    return ids;
+}
+
+function fetchTafs() {
+    event.preventDefault();
+    let aerodromeIds = normalizeIcaoInput(document.getElementById("taf-input").value);
+
+    const endpoint = `https://tafs-highlighter-awc-proxy-a6f26733e6d1.herokuapp.com/tafs`;
+    let data = {
+        "ids": aerodromeIds
+    }
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+        response.text().then(handleTafInput).then(lastUpdated);
+    })
+    .catch(error => {
+        console.error("There was a problem with the fetch operation:", error);
+    });
+
+    return false;
+}
+
 
 fetchRunwayDatabaseOffline();
 // fetchRunwayDatabase();
