@@ -205,7 +205,19 @@ function mpsToKts(mps) {
     return mps * KTS_PER_MPS;
 }
 
+function isNumeric(str) {
+    if (typeof str != "string") {
+        return false
+    }
+
+    return !isNaN(str) && !isNaN(parseFloat(str))
+}
+
 function analyzeWind(icao, windGroup) {
+    document.getElementById("wind-analysis-value").innerHTML = `${icao} ${windGroup}`;
+    let table = document.getElementById("wind-components");
+    deleteRows(table);
+
     if (!gRunways[icao]) {
         return;
     }
@@ -220,36 +232,61 @@ function analyzeWind(icao, windGroup) {
         windKnots = mpsToKts(windMagnitude);
     }
 
-    document.getElementById("wind-analysis-value").innerHTML = `${icao} ${windGroup}`;
 
-    let table = document.getElementById("wind-components");
-    deleteRows(table);
+    function appendRow(style, runwayIdent, runwayIdentHover, runwayDimensions, runwayDimensionsHover, headwindComponentStr, crosswindComponentStr) {
+        let row = table.insertRow();
+        row.style = style;
+        let runway_ident_cell = row.insertCell()
+        runway_ident_cell.append(runwayIdent);
+        runway_ident_cell.title = runwayIdentHover;
+        let runway_dimensions_cell = row.insertCell();
+        runway_dimensions_cell.append(runwayDimensions);
+        if (runwayDimensionsHover) {
+            runway_dimensions_cell.title = runwayDimensionsHover;
+        }
+        row.insertCell().append(headwindComponentStr);
+        row.insertCell().append(crosswindComponentStr);
+    }
 
     for (let i = 0; i < gRunways[icao].length; i++) {
         ["le", "he"].forEach((prefix) => {
-            let angle = windDirection - gRunways[icao][i][prefix + "_heading_degT"];
-            let headwindComponent = windKnots * Math.cos(angle * Math.PI / 180);
-            let isHeadwind = headwindComponent >= 0;
-            let crosswindComponent = windKnots * Math.sin(angle * Math.PI / 180);
-            let crosswindComponentStr = crosswindComponent >= 0 ? "R" : "L";
+            const isRunwayHeadingAvailable = isNumeric(gRunways[icao][i][prefix + "_heading_degT"]);
 
-            let row = table.insertRow();
-            row.style = isHeadwind ? "color: #77DD77" : "color: default";
-            let runway_ident_cell = row.insertCell()
-            runway_ident_cell.append(`${gRunways[icao][i][prefix + "_ident"]}`);
-            runway_ident_cell.title = `${gRunways[icao][i][prefix + "_heading_degT"]}° true`;
+            let runwayIdent = `${gRunways[icao][i][prefix + "_ident"]}`;
+            let runwayIdentHover;
 
+            let runwayDimensions;
+            let runwayDimensionsHover;
             if (gRunways[icao][i][prefix + "_displaced_threshold_ft"]) {
-                let runway_dimensions_cell = row.insertCell();
-                runway_dimensions_cell.append(`${gRunways[icao][i]["length_ft"]}* x ${gRunways[icao][i]["width_ft"]}`);
-                runway_dimensions_cell.title = `${gRunways[icao][i][prefix + "_displaced_threshold_ft"]} ft displaced threshold`;
+                runwayDimensions = `${gRunways[icao][i]["length_ft"]}* x ${gRunways[icao][i]["width_ft"]}`;
+                runwayDimensionsHover = `${gRunways[icao][i][prefix + "_displaced_threshold_ft"]} ft displaced threshold`;
             }
             else {
-                row.insertCell().append(`${gRunways[icao][i]["length_ft"]} x ${gRunways[icao][i]["width_ft"]}`);
+                runwayDimensions = `${gRunways[icao][i]["length_ft"]} x ${gRunways[icao][i]["width_ft"]}`;
             }
 
-            row.insertCell().append(`${headwindComponent.toFixed(1)}`);
-            row.insertCell().append(`${Math.abs(crosswindComponent).toFixed(1)} ${crosswindComponentStr}`);
+            let headwindComponentStr;
+            let crosswindComponentStr;
+            let style = "color: default";
+
+            if (isRunwayHeadingAvailable) {
+                runwayIdentHover = `${gRunways[icao][i][prefix + "_heading_degT"]}° true`;
+                let angle = windDirection - gRunways[icao][i][prefix + "_heading_degT"];
+                let headwindComponent = windKnots * Math.cos(angle * Math.PI / 180);
+                let crosswindComponent = windKnots * Math.sin(angle * Math.PI / 180);
+                headwindComponentStr = `${headwindComponent.toFixed(1)}`;
+                crosswindComponentStr = `${Math.abs(crosswindComponent).toFixed(1)} ${crosswindComponent >= 0 ? "R" : "L"}`;
+                if (headwindComponent >= 0) {
+                    style = "color: #77DD77";
+                }
+            }
+            else {
+                runwayIdentHover = "heading unknown"
+                headwindComponentStr = "unable math";
+                crosswindComponentStr = "unable math";
+            }
+
+            appendRow(style, runwayIdent, runwayIdentHover, runwayDimensions, runwayDimensionsHover, headwindComponentStr, crosswindComponentStr);
         });
     }
 }
