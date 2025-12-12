@@ -175,12 +175,6 @@ let gTimeframes = {};
 let gRunways = {};
 
 
-function handleSubmit(event) {
-    event.preventDefault();
-    const idInput = document.getElementById("idInput").value;
-    const response = fetchTaf(idInput);
-}
-
 function handleTafInput(input) {
     if (!input.trim()) {
         let outputList = document.getElementById("outputList");
@@ -801,15 +795,21 @@ function normalizeIcaoInput(input) {
     let ids = input.split(/[\W/]+/);
     ids = ids.filter((id) => id !== "");
     ids = [...new Set(ids)];
-    idsString = ids.join(",");
+    idsString = ids.join(",").toUpperCase();
     document.getElementById("taf-input").value = idsString;
     document.getElementById("awc-link").href = `https://aviationweather.gov/data/taf/?ids=${idsString}`;
     return ids;
 }
 
 function fetchTafs() {
-    event.preventDefault();
+    if (event) {  // event is undefined if function is called manually
+        event.preventDefault();
+    }
+
     let aerodromeIds = normalizeIcaoInput(document.getElementById("taf-input").value);
+    if (!aerodromeIds.length) {
+        return;
+    }
 
     const endpoint = `https://tafs-highlighter-awc-proxy-a6f26733e6d1.herokuapp.com/tafs`;
     let data = {
@@ -827,7 +827,7 @@ function fetchTafs() {
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
-        response.text().then(handleTafInput).then(lastUpdated);
+        response.text().then(handleTafInput).then(lastUpdated).then(setUrlParams);
     })
     .catch(error => {
         console.error("There was a problem with the fetch operation:", error);
@@ -836,11 +836,29 @@ function fetchTafs() {
     return false;
 }
 
+function setUrlParams() {
+    let tafInputString = document.getElementById("taf-input").value;
+    let params = new URLSearchParams(window.location.search);
+    if (params.get("ids") === tafInputString) {
+        return;  // prevent infinite refresh
+    }
+
+    params.set("ids", tafInputString);
+    window.history.replaceState({}, "", `?${params.toString()}`);
+}
+
+function loadUrlParams() {
+    let params = new URLSearchParams(window.location.search);
+    document.getElementById("taf-input").value = params.get("ids");
+    fetchTafs();
+}
 
 fetchRunwayDatabaseOffline();
 // fetchRunwayDatabase();
 
 displayClock();
+
+loadUrlParams();
 
 </script>
 </body>
