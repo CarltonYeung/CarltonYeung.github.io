@@ -23,7 +23,7 @@
         margin-right: 36px;
     }
 
-    #outputList {
+    #output-list {
         display: grid;
         grid-template-columns: 250px auto;
         grid-auto-rows: min-content;
@@ -162,7 +162,7 @@
                 <p>source of runway data: <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a></p>
             </div>
         </div>
-        <div id="outputList">
+        <div id="output-list">
         </div>
     </div>
     <footer>
@@ -176,12 +176,6 @@ let gRunways = {};
 
 
 function handleTafInput(input) {
-    if (!input.trim()) {
-        let outputList = document.getElementById("outputList");
-        outputList.replaceChildren();
-        return;
-    }
-
     let tafs = input.toUpperCase();
     tafs = coalesceSpaces(tafs);
     tafs = prettyTafs(tafs);
@@ -295,7 +289,7 @@ function makeParagraphs(tafs) {
     let re = /\n\n/g;
     let tafsArray = tafs.split(re);
 
-    let outputList = document.getElementById("outputList");
+    let outputList = document.getElementById("output-list");
     outputList.replaceChildren();
 
     tafsArray.forEach((tafText, index) => {
@@ -794,8 +788,9 @@ function lastUpdated() {
 function normalizeIcaoInput(input) {
     let ids = input.split(/[\W/]+/);
     ids = ids.filter((id) => id !== "");
+    ids = ids.map(id => id.toUpperCase());
     ids = [...new Set(ids)];
-    idsString = ids.join(",").toUpperCase();
+    idsString = ids.join(",");
     document.getElementById("taf-input").value = idsString;
     document.getElementById("awc-link").href = `https://aviationweather.gov/data/taf/?ids=${idsString}`;
     return ids;
@@ -806,8 +801,12 @@ function fetchTafs() {
         event.preventDefault();
     }
 
+    document.getElementById("last-updated").textContent = "last updated:";
+    document.getElementById("output-list").replaceChildren();
+
     let aerodromeIds = normalizeIcaoInput(document.getElementById("taf-input").value);
     if (!aerodromeIds.length) {
+        setUrlParams();
         return;
     }
 
