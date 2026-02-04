@@ -702,12 +702,19 @@ async function fetchRunwayDatabase() {
             const AIRPORT_IDENT = 2;
             const LENGTH_FT = 3;
             const WIDTH_FT = 4;
+            const CLOSED = 7;
             const LE_IDENT = 8;
             const LE_HEADING_DEGT = 12;
+            const LE_DISPLACED_THRESHOLD_FT = 13;
             const HE_IDENT = 14;
             const HE_HEADING_DEGT = 18;
+            const HE_DISPLACED_THRESHOLD_FT = 19;
 
             if (!line[AIRPORT_IDENT]) {
+                continue;
+            }
+
+            if (line[CLOSED] == "1") {
                 continue;
             }
 
@@ -719,8 +726,10 @@ async function fetchRunwayDatabase() {
                 "length_ft": line[LENGTH_FT],
                 "width_ft": line[WIDTH_FT],
                 "le_heading_degT": line[LE_HEADING_DEGT],
+                "le_displaced_threshold_ft": line[LE_DISPLACED_THRESHOLD_FT],
                 "he_ident": line[HE_IDENT].replaceAll("\"", ""),
-                "he_heading_degT": line[HE_HEADING_DEGT]
+                "he_heading_degT": line[HE_HEADING_DEGT],
+                "he_displaced_threshold_ft": line[HE_DISPLACED_THRESHOLD_FT],
             });
 
             gRunways[ident] = runways;
@@ -728,6 +737,8 @@ async function fetchRunwayDatabase() {
 
     } catch (error) {
         console.error(error.message);
+        console.log("Fallback mode: Loading runway data offline");
+        fetchRunwayDatabaseOffline();
     }
 }
 
@@ -852,8 +863,8 @@ function loadUrlParams() {
     fetchTafs();
 }
 
-fetchRunwayDatabaseOffline();
-// fetchRunwayDatabase();
+// fetchRunwayDatabaseOffline();
+fetchRunwayDatabase();
 
 displayClock();
 
