@@ -20,7 +20,6 @@
         font-size: 16px;
         background: #2B3035;
         color: #DEE2E6;
-        margin-right: 36px;
     }
 
     #output-list {
@@ -33,7 +32,7 @@
     }
 
     .selectContainer {
-        min-width: 130px;
+        min-width: 135px;
     }
 
     .selectStart, .selectEnd {
@@ -72,7 +71,7 @@
         top: 114px;
         height: fit-content;
         margin-bottom: 64px;
-        margin-right: 32px;
+        margin-right: 64px;
     }
 
     #title-and-clock {
@@ -111,6 +110,10 @@
 
     a {
         color: lightskyblue;
+    }
+
+    button {
+        padding: 6px 10px;
     }
 
     button.analyze-wind {
@@ -179,8 +182,10 @@
             <div id="div-taf-input">
                 <form onsubmit="return fetchTafs()">
                     <input type="text" id="taf-input" size="52" name="taf-input" placeholder="4-letter ICAO stations"></input>
+                    <br>
+                    <p id="last-updated" style="display: inline-block;"></p>
+                    <button><i class="fa-solid fa-arrows-rotate"></i></button>
                 </form>
-                <p id="last-updated"></p>
                 <div>source of tafs: <a id="awc-link" href="https://aviationweather.gov/data/taf/" target="_blank">Aviation Weather Center</a></div>
             </div>
             <div id="wind-analysis">
