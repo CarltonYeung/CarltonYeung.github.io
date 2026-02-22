@@ -9,8 +9,8 @@
         font-size: 16px;
         background: #212529;
         color: #DEE2E6;
-        margin: 0px 104px;
-        padding: 24px 12px;
+        padding: 32px 116px;
+        margin: 0px;
     }
 
     #taf-input {
@@ -25,14 +25,15 @@
 
     #output-list {
         display: grid;
-        grid-template-columns: 250px auto;
+        grid-template-columns: auto minmax(50ch, max-content);
+        justify-content: left;
         grid-auto-rows: min-content;
-        gap: 32px;
+        gap: 48px 32px;
         white-space: pre-wrap;
-        padding: 32px;
     }
 
     .selectContainer {
+        min-width: 130px;
     }
 
     .selectStart, .selectEnd {
@@ -42,6 +43,8 @@
         text-align: center;
         margin-left: 8px;
         margin-right: 8px;
+        margin-top: 5px;
+        margin-bottom: 8px;
         padding: 6px 12px;
         font-size: 16px;
         background: #2B3035;
@@ -54,12 +57,48 @@
 
     mark, mark > button.analyze-wind {
         background-color: transparent;
-        color: #77DD77;  /* TODO: consider sticking with white, but "unhighlighting" the irrelevant lines in the TAF */
+        color: #77DD77;
     }
 
     #main {
         display: grid;
-        grid-template-columns: 1fr 3fr;
+        grid-template-columns: 1fr;
+        container-type: inline-size;
+        margin-top: 32px;
+        margin-bottom: 32px;
+    }
+
+    #left {
+        top: 114px;
+        height: fit-content;
+        margin-bottom: 64px;
+        margin-right: 32px;
+    }
+
+    #title-and-clock {
+        margin-bottom: 64px;
+    }
+
+    #title {
+        margin-top: 0px;
+    }
+
+    #div-taf-input {
+        margin-bottom: 64px;
+    }
+
+    #wind-title {
+        margin-bottom: 32px;
+    }
+
+    @media screen and (width > 1400px) {
+        #main {
+            grid-template-columns: 1fr 3fr;
+        }
+
+        #left {
+            position: sticky;
+        }
     }
 
     .hidden {
@@ -84,12 +123,6 @@
         font-size: 16px;
         cursor: help;  /* mouse hover */
         user-select: text;  /* make text copyable */
-    }
-
-    #left {
-        top: 80px;
-        position: sticky;
-        height: fit-content;
     }
 
     table, th, td {
@@ -139,18 +172,21 @@
     </header>
     <div id="main">
         <div id="left">
-            <h1>TAFs</h1>
-            <h2 id="clock"></h2>
-            <br><br>
-            <form onsubmit="return fetchTafs()">
-                <input type="text" id="taf-input" size="52" name="taf-input" placeholder="4-letter ICAO stations"></input>
-            </form>
-            <p id="last-updated"></p>
-            <div>source of tafs: <a id="awc-link" href="https://aviationweather.gov/data/taf/" target="_blank">Aviation Weather Center</a></div> <!-- TODO: change based on input -->
-            <br><br><br>
+            <div id="title-and-clock">
+                <h1 id="title">TAFs</h1>
+                <h2 id="clock"></h2>
+            </div>
+            <div id="div-taf-input">
+                <form onsubmit="return fetchTafs()">
+                    <input type="text" id="taf-input" size="52" name="taf-input" placeholder="4-letter ICAO stations"></input>
+                </form>
+                <p id="last-updated"></p>
+                <div>source of tafs: <a id="awc-link" href="https://aviationweather.gov/data/taf/" target="_blank">Aviation Weather Center</a></div>
+            </div>
             <div id="wind-analysis">
-                <h2><span>wind: </span><span id="wind-analysis-value">(click on a wind group)</span></h2>
-                <br>
+                <div id="wind-title">
+                    <h2><span>wind: </span><span id="wind-analysis-value">(click on a wind group)</span></h2>
+                </div>
                 <table id="wind-components">
                     <tr>
                         <th id="column-runway">runway</th>
