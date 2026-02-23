@@ -117,7 +117,7 @@
     }
 
     button.analyze-wind {
-          /* remove button styling */
+        /* remove button styling */
         background: none;
         border: none;
         padding: 0px;
@@ -190,12 +190,12 @@
             </div>
             <div id="wind-analysis">
                 <div id="wind-title">
-                    <h2><span>wind: </span><span id="wind-analysis-value">(click on a wind group)</span></h2>
+                    <h2><span>wind: </span><span id="wind-analysis-aerodrome">(click on a wind group)</span> <span id="wind-analysis-windgroup"></span></h2>
                 </div>
                 <table id="wind-components">
                     <tr>
                         <th id="column-runway">runway</th>
-                        <th id="column-dimensions">dimensions (ft)</th>
+                        <th id="column-dimensions">dimensions (<a id="column-dimensions-unit" href="javascript:void(0);" onclick="return toggleRunwayDimensionsUnit()">ft</a>)</th>
                         <th id="column-headwind">headwind (kts)</th>
                         <th id="column-crosswind">crosswind (kts)</th>
                     </tr>
@@ -242,8 +242,26 @@ function isNumeric(str) {
     return !isNaN(str) && !isNaN(parseFloat(str))
 }
 
+function toggleRunwayDimensionsUnit() {
+    if (event) {
+        event.preventDefault();
+    }
+
+    let units = document.getElementById("column-dimensions-unit");
+    units.innerText = units.innerText === "ft" ? "m" : "ft";
+    analyzeWind(document.getElementById("wind-analysis-aerodrome").innerHTML, document.getElementById("wind-analysis-windgroup").innerHTML);
+}
+
+function feetToMeters(feet) {
+    const METERS_PER_FOOT = 0.3048;
+    return Math.round(Number(feet * METERS_PER_FOOT));
+}
+
 function analyzeWind(icao, windGroup) {
-    document.getElementById("wind-analysis-value").innerHTML = `${icao} ${windGroup}`;
+    document.getElementById("wind-analysis-aerodrome").innerHTML = `${icao}`;
+    document.getElementById("wind-analysis-windgroup").innerHTML = `${windGroup}`;
+    const RWY_DIMENSIONS_UNIT = document.getElementById("column-dimensions-unit").innerText;
+
     let table = document.getElementById("wind-components");
     deleteRows(table);
 
@@ -265,13 +283,13 @@ function analyzeWind(icao, windGroup) {
     function appendRow(style, runwayIdent, runwayIdentHover, runwayDimensions, runwayDimensionsHover, headwindComponentStr, crosswindComponentStr) {
         let row = table.insertRow();
         row.style = style;
-        let runway_ident_cell = row.insertCell()
-        runway_ident_cell.append(runwayIdent);
-        runway_ident_cell.title = runwayIdentHover;
-        let runway_dimensions_cell = row.insertCell();
-        runway_dimensions_cell.append(runwayDimensions);
+        let runwayIdentCell = row.insertCell()
+        runwayIdentCell.append(runwayIdent);
+        runwayIdentCell.title = runwayIdentHover;
+        let runwayDimensionsCell = row.insertCell();
+        runwayDimensionsCell.append(runwayDimensions);
         if (runwayDimensionsHover) {
-            runway_dimensions_cell.title = runwayDimensionsHover;
+            runwayDimensionsCell.title = runwayDimensionsHover;
         }
         row.insertCell().append(headwindComponentStr);
         row.insertCell().append(crosswindComponentStr);
@@ -286,12 +304,26 @@ function analyzeWind(icao, windGroup) {
 
             let runwayDimensions;
             let runwayDimensionsHover;
-            if (gRunways[icao][i][prefix + "_displaced_threshold_ft"]) {
-                runwayDimensions = `${gRunways[icao][i]["length_ft"]}* x ${gRunways[icao][i]["width_ft"]}`;
-                runwayDimensionsHover = `${gRunways[icao][i][prefix + "_displaced_threshold_ft"]} ft displaced threshold`;
+            if (RWY_DIMENSIONS_UNIT === "ft") {
+                if (gRunways[icao][i][prefix + "_displaced_threshold_ft"]) {
+                    runwayDimensions = `${gRunways[icao][i]["length_ft"]}* x ${gRunways[icao][i]["width_ft"]}`;
+                    runwayDimensionsHover = `${gRunways[icao][i][prefix + "_displaced_threshold_ft"]} ft displaced threshold`;
+                }
+                else {
+                    runwayDimensions = `${gRunways[icao][i]["length_ft"]} x ${gRunways[icao][i]["width_ft"]}`;
+                }
+            }
+            else if (RWY_DIMENSIONS_UNIT === "m") {
+                if (gRunways[icao][i][prefix + "_displaced_threshold_ft"]) {
+                    runwayDimensions = `${feetToMeters(gRunways[icao][i]["length_ft"])}* x ${feetToMeters(gRunways[icao][i]["width_ft"])}`;
+                    runwayDimensionsHover = `${feetToMeters(gRunways[icao][i][prefix + "_displaced_threshold_ft"])} m displaced threshold`;
+                }
+                else {
+                    runwayDimensions = `${feetToMeters(gRunways[icao][i]["length_ft"])} x ${feetToMeters(gRunways[icao][i]["width_ft"])}`;
+                }
             }
             else {
-                runwayDimensions = `${gRunways[icao][i]["length_ft"]} x ${gRunways[icao][i]["width_ft"]}`;
+                runwayDimensions = "error";
             }
 
             let headwindComponentStr;
