@@ -224,7 +224,7 @@ function handleTafInput(input) {
 }
 
 function clickableWind(text, icao) {
-    let re = /((\d{3})(\d{2})(?:G(\d+))?(?:KT|MPS))/g;
+    let re = /((VRB|\d{3})(\d{2})(?:G(\d+))?(?:KT|MPS))/g;
     clickableText = text.replaceAll(re, `<button class="analyze-wind" onclick="analyzeWind('${icao}', '$1')">$1</button>`);
     return clickableText;
 }
@@ -269,9 +269,9 @@ function analyzeWind(icao, windGroup) {
         return;
     }
 
-    let re = /(\d{3})(\d{2})(?:G(\d+))?(KT|MPS)/;
+    let re = /(VRB|\d{3})(\d{2})(?:G(\d+))?(KT|MPS)/;
     let matches = windGroup.match(re);
-    let windDirection = parseInt(matches[1]);
+    let windDirection = matches[1] === "VRB" ? "VRB" : parseInt(matches[1]);
     let windMagnitude = parseInt(matches[3] || matches[2]);  // prioritize gusts
 
     let windKnots = windMagnitude;
@@ -332,13 +332,20 @@ function analyzeWind(icao, windGroup) {
 
             if (isRunwayHeadingAvailable) {
                 runwayIdentHover = `${gRunways[icao][i][prefix + "_heading_degT"]}° true`;
-                let angle = windDirection - gRunways[icao][i][prefix + "_heading_degT"];
-                let headwindComponent = windKnots * Math.cos(angle * Math.PI / 180);
-                let crosswindComponent = windKnots * Math.sin(angle * Math.PI / 180);
-                headwindComponentStr = `${headwindComponent.toFixed(1)}`;
-                crosswindComponentStr = `${Math.abs(crosswindComponent).toFixed(1)} ${crosswindComponent >= 0 ? "R" : "L"}`;
-                if (headwindComponent >= 0) {
-                    style = "color: #77DD77";
+
+                if (Number.isInteger(windDirection)) {
+                    let angle = windDirection - gRunways[icao][i][prefix + "_heading_degT"];
+                    let headwindComponent = windKnots * Math.cos(angle * Math.PI / 180);
+                    let crosswindComponent = windKnots * Math.sin(angle * Math.PI / 180);
+                    headwindComponentStr = `${headwindComponent.toFixed(1)}`;
+                    crosswindComponentStr = `${Math.abs(crosswindComponent).toFixed(1)} ${crosswindComponent >= 0 ? "R" : "L"}`;
+                    if (headwindComponent >= 0) {
+                        style = "color: #77DD77";
+                    }
+                }
+                else if (windDirection === "VRB") {
+                    headwindComponentStr = "VRB";
+                    crosswindComponentStr = "VRB";
                 }
             }
             else {
