@@ -272,11 +272,14 @@ function analyzeWind(icao, windGroup) {
     let re = /(VRB|\d{3})(\d{2})(?:G(\d+))?(KT|MPS)/;
     let matches = windGroup.match(re);
     let windDirection = matches[1] === "VRB" ? "VRB" : parseInt(matches[1]);
-    let windMagnitude = parseInt(matches[3] || matches[2]);  // prioritize gusts
+    let meanMagnitude = parseInt(matches[2]);
+    let gustsMagnitude = parseInt(matches[3]);
 
-    let windKnots = windMagnitude;
+    let meanKnots = meanMagnitude;
+    let gustsKnots = gustsMagnitude;
     if (matches[4] === "MPS") {
-        windKnots = mpsToKts(windMagnitude);
+        meanKnots = mpsToKts(meanMagnitude);
+        gustsKnots = mpsToKts(gustsMagnitude);
     }
 
 
@@ -334,12 +337,28 @@ function analyzeWind(icao, windGroup) {
                 runwayIdentHover = `${gRunways[icao][i][prefix + "_heading_degT"]}° true`;
 
                 if (Number.isInteger(windDirection)) {
+
+                    const ceilAwayFromZero = (num) => {
+                        return num >= 0 ? Math.ceil(num) : Math.floor(num);
+                    };
+
                     let angle = windDirection - gRunways[icao][i][prefix + "_heading_degT"];
-                    let headwindComponent = windKnots * Math.cos(angle * Math.PI / 180);
-                    let crosswindComponent = windKnots * Math.sin(angle * Math.PI / 180);
-                    headwindComponentStr = `${headwindComponent.toFixed(1)}`;
-                    crosswindComponentStr = `${Math.abs(crosswindComponent).toFixed(1)} ${crosswindComponent >= 0 ? "R" : "L"}`;
-                    if (headwindComponent >= 0) {
+
+                    let headwindComponentMean = meanKnots * Math.cos(angle * Math.PI / 180);
+                    headwindComponentStr = `${ceilAwayFromZero(headwindComponentMean)}`;
+                    if (!isNaN(gustsKnots)) {
+                        let headwindComponentGusts = gustsKnots * Math.cos(angle * Math.PI / 180);
+                        headwindComponentStr += ` G ${ceilAwayFromZero(headwindComponentGusts)}`;
+                    }
+
+                    let crosswindComponentMean = meanKnots * Math.sin(angle * Math.PI / 180);
+                    crosswindComponentStr = `${ceilAwayFromZero(crosswindComponentMean)}`;
+                    if (!isNaN(gustsKnots)) {
+                        let crosswindComponentGusts = gustsKnots * Math.sin(angle * Math.PI / 180);
+                        crosswindComponentStr += ` G ${ceilAwayFromZero(crosswindComponentGusts)}`;
+                    }
+
+                    if (headwindComponentMean >= 0) {
                         style = "color: #77DD77";
                     }
                 }
