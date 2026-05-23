@@ -13,7 +13,7 @@
         margin: 0px;
     }
 
-    #taf-input {
+    #taf-input, #wind-input {
         font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         text-transform: uppercase;
         padding: 6px 12px;
@@ -86,7 +86,7 @@
         margin-bottom: 64px;
     }
 
-    #wind-title {
+    #wind-header {
         margin-bottom: 32px;
     }
 
@@ -189,8 +189,10 @@
                 <div>source of tafs: <a id="awc-link" href="https://aviationweather.gov/data/taf/" target="_blank">Aviation Weather Center</a></div>
             </div>
             <div id="wind-analysis">
-                <div id="wind-title">
-                    <h2><span>wind: </span><span id="wind-analysis-aerodrome">(click on a wind group)</span> <span id="wind-analysis-windgroup"></span></h2>
+                <div id="wind-header">
+                    <form id="wind-form" onsubmit="return analyzeWindFromInput()">
+                        <h2>wind: <input type="text" id="wind-input" size="25" placeholder="KJFK 00000KT" oninput="return onWindInput()"></input></h2>
+                    </form>
                 </div>
                 <table id="wind-components">
                     <tr>
@@ -249,7 +251,7 @@ function toggleRunwayDimensionsUnit() {
 
     let units = document.getElementById("column-dimensions-unit");
     units.innerText = units.innerText === "ft" ? "m" : "ft";
-    analyzeWind(document.getElementById("wind-analysis-aerodrome").innerHTML, document.getElementById("wind-analysis-windgroup").innerHTML);
+    analyzeWindFromInput();
 }
 
 function feetToMeters(feet) {
@@ -257,29 +259,63 @@ function feetToMeters(feet) {
     return Math.round(Number(feet * METERS_PER_FOOT));
 }
 
+function onWindInput() {
+    // reset validity so you can hit Enter on the input again
+    document.getElementById("wind-input").setCustomValidity("");
+    document.getElementById("wind-input").reportValidity();
+}
+
+function analyzeWindFromInput() {
+    if (event) {
+        event.preventDefault();
+    }
+
+    let [icao, wind] = document.getElementById("wind-input").value.trim().toUpperCase().split(/\s+/);
+    analyzeWind(icao, wind);
+}
+
 function analyzeWind(icao, windGroup) {
-    document.getElementById("wind-analysis-aerodrome").innerHTML = `${icao}`;
-    document.getElementById("wind-analysis-windgroup").innerHTML = `${windGroup}`;
     const RWY_DIMENSIONS_UNIT = document.getElementById("column-dimensions-unit").innerText;
 
     let table = document.getElementById("wind-components");
     deleteRows(table);
 
     if (!gRunways[icao]) {
+        if (icao) {
+            document.getElementById("wind-input").setCustomValidity(`No runway data for ${icao}`);
+            document.getElementById("wind-input").reportValidity();
+        }
         return;
     }
 
-    let re = /(VRB|\d{3})(\d{2})(?:G(\d+))?(KT|MPS)/;
+    let re = /\s*(VRB|\d{3})(\d+)(?:G(\d+))?(KT|MPS)\s*/;
     let matches = windGroup.match(re);
-    let windDirection = matches[1] === "VRB" ? "VRB" : parseInt(matches[1]);
-    let meanMagnitude = parseInt(matches[2]);
-    let gustsMagnitude = parseInt(matches[3]);
+    try {
+        var windDirection = matches[1] === "VRB" ? "VRB" : parseInt(matches[1]);
+        var meanMagnitude = parseInt(matches[2]);
+        var gustsMagnitude = parseInt(matches[3]);
+        var units = matches[4];
+    } catch (e) {
+        document.getElementById("wind-input").setCustomValidity("Invalid wind");
+        document.getElementById("wind-input").reportValidity();
+        return;
+    }
 
     let meanKnots = meanMagnitude;
     let gustsKnots = gustsMagnitude;
     if (matches[4] === "MPS") {
         meanKnots = mpsToKts(meanMagnitude);
         gustsKnots = mpsToKts(gustsMagnitude);
+    }
+
+    let paddedDir = windDirection.toString().padStart(3, "0");
+    let paddedMean = meanMagnitude.toString().padStart(2, "0");
+    if (!isNaN(gustsMagnitude)) {
+        let paddedGusts = gustsMagnitude.toString().padStart(2, "0");
+        document.getElementById("wind-input").value = `${icao} ${paddedDir}${paddedMean}G${paddedGusts}${units}`;
+    }
+    else {
+        document.getElementById("wind-input").value = `${icao} ${paddedDir}${paddedMean}${units}`;
     }
 
 
