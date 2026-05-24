@@ -383,7 +383,7 @@ function analyzeWind(icao, windGroup) {
                     let headwindComponentMean = meanKnots * Math.cos(angle * Math.PI / 180);
                     headwindComponentStr = `${ceilAwayFromZero(headwindComponentMean)}`;
                     if (!isNaN(gustsKnots)) {
-                        let headwindComponentGusts = gustsKnots * Math.cos(angle * Math.PI / 180);
+                        var headwindComponentGusts = gustsKnots * Math.cos(angle * Math.PI / 180);
                         headwindComponentStr += ` G ${ceilAwayFromZero(headwindComponentGusts)}`;
                     }
 
@@ -394,7 +394,7 @@ function analyzeWind(icao, windGroup) {
                         crosswindComponentStr += ` G ${ceilAwayFromZero(crosswindComponentGusts)}`;
                     }
 
-                    if (headwindComponentMean >= 0) {
+                    if (headwindComponentMean >= 0 && (!headwindComponentGusts || headwindComponentGusts >= 0)) {
                         style = "color: #77DD77";
                     }
                 }
