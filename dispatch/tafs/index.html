@@ -288,7 +288,7 @@ function analyzeWind(icao, windGroup) {
 
     if (!gRunways[icao]) {
         if (icao) {
-            document.getElementById("wind-input").setCustomValidity(`No runway data for ${icao}`);
+            document.getElementById("wind-input").setCustomValidity(`no runway data for ${icao}`);
             document.getElementById("wind-input").reportValidity();
         }
         return;
@@ -302,7 +302,7 @@ function analyzeWind(icao, windGroup) {
         var gustsMagnitude = parseInt(matches[3]);
         var units = matches[4];
     } catch (e) {
-        document.getElementById("wind-input").setCustomValidity("Invalid wind");
+        document.getElementById("wind-input").setCustomValidity("invalid wind");
         document.getElementById("wind-input").reportValidity();
         return;
     }
