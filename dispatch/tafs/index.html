@@ -518,8 +518,9 @@ function highlightTaf(tafDiv, start, end) {
         return;
     }
 
-    unhighlightTaf(tafDiv);
+    tafDiv.innerHTML = tafDiv.taf;
     let lines = tafDiv.innerHTML.split("\n");
+    let shouldHighlight = new Array(lines.length).fill(false);
 
     // first FM group
     let baseCaseIdx;
@@ -531,7 +532,7 @@ function highlightTaf(tafDiv, start, end) {
             let fmDDHH = fmDDHHMM.slice(0, 4);  // bug: FM011930 is considered to start from 1900; can result in an earlier FM line not highlighted
 
             if (indexOfDDHH(tafDiv, fmDDHH) < indexOfDDHH(tafDiv, end)) {
-                lines[i] = highlightLine(lines[i]);
+                shouldHighlight[i] = true;
 
                 if (indexOfDDHH(tafDiv, fmDDHH) <= indexOfDDHH(tafDiv, start)) {
                     baseCaseIdx = i;
@@ -542,7 +543,7 @@ function highlightTaf(tafDiv, start, end) {
     }
     if (baseCaseIdx === undefined) {
         baseCaseIdx = 0;
-        lines[0] = highlightLine(lines[0]);
+        shouldHighlight[0] = true;
     }
 
     // BECMG
@@ -553,7 +554,7 @@ function highlightTaf(tafDiv, start, end) {
             let startDDHH = range[1];
 
             if (indexOfDDHH(tafDiv, startDDHH) < indexOfDDHH(tafDiv, end)) {
-                lines[i] = highlightLine(lines[i]);
+                shouldHighlight[i] = true;
             }
         }
     }
@@ -572,7 +573,7 @@ function highlightTaf(tafDiv, start, end) {
                     || (indexOfDDHH(tafDiv, startDDHH) < indexOfDDHH(tafDiv, end) && indexOfDDHH(tafDiv, end) <= indexOfDDHH(tafDiv, endDDHH))  // start/end is on opposite sides of our end time
                     || (indexOfDDHH(tafDiv, start) < indexOfDDHH(tafDiv, startDDHH) && indexOfDDHH(tafDiv, endDDHH) < indexOfDDHH(tafDiv, end)))  // fully within in our time period
                     {
-                        lines[i] = highlightLine(lines[i]);
+                        shouldHighlight[i] = true;
                     }
             }
         }
@@ -588,13 +589,152 @@ function highlightTaf(tafDiv, start, end) {
 
                 // only if it's undeniably within the time frame
                 if ((indexOfDDHH(tafDiv, startDDHH) < indexOfDDHH(tafDiv, start) && indexOfDDHH(tafDiv, start) < indexOfDDHH(tafDiv, endDDHH))) {
-                    lines[i] = highlightLine(lines[i]);
+                    shouldHighlight[i] = true;
                 }
             }
         }
     }
 
-    tafDiv.innerHTML = lines.join("\n");
+    // Find elements that are covered by BECMG
+    let coveredElements = new Map();  // key: index of line covered by BECMG, value: set of covered taf elements
+
+    for (let i = lines.length - 1; i > 0; i--) {
+        if (shouldHighlight[i]) {
+            let re = /\bBECMG\s(\d{4})\/(\d{4})\b/;
+            let range = lines[i].match(re);
+            if (range) {
+                let becmgEnd = range[2];
+
+                if (indexOfDDHH(tafDiv, becmgEnd) <= indexOfDDHH(tafDiv, start)) {
+                    console.debug(`BECMG (line ${i}) may cover previous lines: ${lines[i]}`);
+
+                    const reBecmgFm = /\b(TAF|BECMG|FM)/;
+
+                    // wind
+                    const reWind = /\b((WS\d{3}\/)?(VRB|\d{3})(\d{2})(?:G(\d+))?(?:KT|MPS))\b/;
+                    let coveringWind = lines[i].match(reWind);
+                    if (coveringWind) {
+                        for (let j = i - 1; j >= 0; j--) {
+                            if (shouldHighlight[j] && lines[j].match(reBecmgFm)) {
+                                let windGroup = lines[j].match(reWind);
+                                if (windGroup) {
+                                    console.debug(`${coveringWind[0]} (line ${i}) covers ${windGroup[0]} (line ${j})`);
+                                    if (coveredElements.has(j)) {
+                                        coveredElements.get(j).add(windGroup[0]);
+                                    }
+                                    else {
+                                        coveredElements.set(j, new Set([windGroup[0]]));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // clouds
+                    const reClouds = /(?<=\s)((?:CLR|SKC|CAVOK)|(?:VV\d+)|(?:FEW|SCT|BKN|OVC)(?:\d+(?:CB|TCU)?))\b/g;
+                    let coveringClouds = lines[i].match(reClouds);
+                    if (coveringClouds && coveringClouds.length && coveringClouds.filter(e => e)) {
+                        coveringClouds = coveringClouds.filter(e => e);
+                        for (let j = i - 1; j >= 0; j--) {
+                            if (shouldHighlight[j] && lines[j].match(reBecmgFm)) {
+                                let cloudGroups = lines[j].match(reClouds);
+                                cloudGroups.forEach(cloudGroup => {
+                                    if (cloudGroup) {
+                                        console.debug(`${coveringClouds.join(" ")} (line ${i}) covers ${cloudGroup} (line ${j})`);
+                                        if (coveredElements.has(j)) {
+                                            coveredElements.get(j).add(cloudGroup);
+                                        }
+                                        else {
+                                            coveredElements.set(j, new Set([cloudGroup]));
+                                        }
+                                    }
+                                })
+                            }
+                        }
+                    }
+
+                    // visibility
+                    const reVis = /(P?((\d+\s)?\d\/)?\dSM)|(?<=\s)\d{4}(?=\s|$)|CAVOK/;
+                    let coveringVis = lines[i].match(reVis);
+                    if (coveringVis) {
+                        for (let j = i - 1; j >= 0; j--) {
+                            if (shouldHighlight[j] && lines[j].match(reBecmgFm)) {
+                                let visGroup = lines[j].match(reVis);
+                                if (visGroup) {
+                                    console.debug(`${coveringVis[0]} (line ${i}) covers ${visGroup[0]} (line ${j})`);
+                                    if (coveredElements.has(j)) {
+                                        coveredElements.get(j).add(visGroup[0]);
+                                    }
+                                    else {
+                                        coveredElements.set(j, new Set([visGroup[0]]));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // wx phenomena
+                    const reWx = /((?<=\s)(?=[A-Z+-])(?<intensity>\-|\+|VC)?(?<descriptor>BC|MI|PR|BL|DR|SH|FZ|TS)?(?<precipitation>DZ|RA|SN|SG|IC|PL|GR|GS|UP)?(?<obscuration>BR|FG|FU|VA|DU|SA|HZ|PY)?(?<other>DS|FC|\+FC|PO|SQ|SS|NSW)?\b)/g;
+                    let coveringWx = lines[i].match(reWx);
+                    if (coveringWx && coveringWx.length && coveringWx.filter(e => e).length) {
+                        coveringWx = coveringWx.filter(e => e);
+                        for (let j = i - 1; j >= 0; j--) {
+                            if (shouldHighlight[j] && lines[j].match(reBecmgFm)) {
+                                let wxGroups = lines[j].match(reWx);
+                                wxGroups.forEach(wxGroup => {
+                                    if (wxGroup) {
+                                        console.debug(`${coveringWx.join(" ")} (line ${i}) covers ${wxGroup} (line ${j})`);
+                                        if (coveredElements.has(j)) {
+                                            coveredElements.get(j).add(wxGroup);
+                                        }
+                                        else {
+                                            coveredElements.set(j, new Set([wxGroup]));
+                                        }
+                                    }
+                                })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // highlight lines
+    for (let i = 0; i < lines.length; i++) {
+        if (shouldHighlight[i]) {
+            if (!coveredElements.has(i)) {
+                lines[i] = highlightLine(lines[i]);
+            }
+            else {
+                // use covered elements as delimiters, but wrap it in a capturing group to include the delimiter
+                let delimiters = Array.from(coveredElements.get(i)).map(e => `(${e})`);
+                let re = new RegExp(delimiters.join("|"));
+                let line = lines[i].split(re).filter(e => e);
+
+                // sanity check to make sure the TAF line was not altered from the original
+                try {
+                    var reconstructedLine = line.join("");
+                    if (reconstructedLine !== lines[i]) {
+                        throw new Error(`Reconstructed line "${reconstructedLine}" (${reconstructedLine.length}) !== "${lines[i]}" (${lines[i].length})`);
+                    }
+                } catch (e) {
+                    console.warn(e);
+                    lines[i] = highlightLine(lines[i]);  // highlight the entire original line to be safe
+                    continue;
+                }
+
+                lines[i] = line.map(element => {
+                    if (!coveredElements.get(i).has(element)) {
+                        return highlightLine(element);
+                    }
+                    return element;
+                }).join("");
+            }
+        }
+    }
+
+    tafDiv.innerHTML = clickableWind(lines.join("\n"), tafDiv.icao);
 }
 
 function unhighlightTaf(tafDiv) {
@@ -742,7 +882,7 @@ function getLastDD(startDDHH, endDDHH) {
             lastDD = String(parseInt(startDD) + 1).padStart(2, "0");
         }
         else {
-            console.log(`unable parsing taf period ${startDDHH}/${endDDHH}`);
+            console.warn(`unable parsing taf period ${startDDHH}/${endDDHH}`);
             return;
         }
     }
@@ -879,7 +1019,7 @@ async function fetchRunwayDatabase() {
 
     } catch (error) {
         console.error(error.message);
-        console.log("Fallback mode: Loading runway data offline");
+        console.warn("Fallback mode: Loading runway data offline");
         fetchRunwayDatabaseOffline();
     }
 }
@@ -888,7 +1028,7 @@ function fetchRunwayDatabaseOffline() {
     Papa.parse('runways.csv', {
         download: true,
         complete: function(results, file) {
-            // console.log("Parsing complete:", results, file);
+            console.debug("Parsing complete:", results, file);
 
             let LINES = results.data;
 
