@@ -227,7 +227,7 @@ function handleTafInput(input) {
 
 function clickableWind(text, icao) {
     let re = /((VRB|\d{3})(\d{2})(?:G(\d+))?(?:KT|MPS))/g;
-    clickableText = text.replaceAll(re, `<button class="analyze-wind" onclick="analyzeWind('${icao}', '$1')">$1</button>`);
+    clickableText = text.replaceAll(re, `<button class="analyze-wind" onclick="clickWind('${icao}', '$1')">$1</button>`);
     return clickableText;
 }
 
@@ -258,6 +258,12 @@ function feetToMeters(feet) {
     const METERS_PER_FOOT = 0.3048;
     return Math.round(Number(feet * METERS_PER_FOOT));
 }
+
+function clickWind(icao, windGroup) {
+    document.getElementById("wind-input").value = `${icao} ${windGroup}`;
+    analyzeWind(icao, windGroup);
+}
+
 
 function onWindInput() {
     // reset validity so you can hit Enter on the input again
