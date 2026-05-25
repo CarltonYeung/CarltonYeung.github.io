@@ -181,7 +181,7 @@
             </div>
             <div id="div-taf-input">
                 <form onsubmit="return fetchTafs()">
-                    <input type="text" id="taf-input" size="52" name="taf-input" placeholder="4-letter ICAO stations"></input>
+                    <input type="text" id="taf-input" size="52" name="taf-input" placeholder="ICAO"></input>
                     <br>
                     <p id="last-updated" style="display: inline-block;"></p>
                     <button><i class="fa-solid fa-arrows-rotate"></i></button>
@@ -191,7 +191,7 @@
             <div id="wind-analysis">
                 <div id="wind-header">
                     <form id="wind-form" onsubmit="return analyzeWindFromInput()">
-                        <h2>wind: <input type="text" id="wind-input" size="25" placeholder="KJFK 00000KT" oninput="return onWindInput()"></input></h2>
+                        <input type="text" id="wind-input" size="25" placeholder="ICAO 00000KT" oninput="return onWindInput()"></input>
                     </form>
                 </div>
                 <table id="wind-components">
