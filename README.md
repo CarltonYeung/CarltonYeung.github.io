@@ -8,3 +8,4 @@
 
 ## Aircraft Dispatch
 * [TAFs highlighter](https://carltonyeung.github.io/dispatch/tafs)
+* [Time calculator](https://carltonyeung.github.io/dispatch/time-calculator)
