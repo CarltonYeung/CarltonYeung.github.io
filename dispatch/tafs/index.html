@@ -751,6 +751,14 @@ function highlightTaf(tafDiv, start, end) {
 
 
     tafDiv.innerHTML = clickableWind(lines.join("\n"), tafDiv.icao);
+
+    alertOnAlteredTaf(tafDiv);
+}
+
+function alertOnAlteredTaf(tafDiv) {
+    if (tafDiv.innerText !== tafDiv.taf) {
+        console.warn(`taf does not match original\n${tafDiv.taf}`);
+    }
 }
 
 function unhighlightTaf(tafDiv) {
