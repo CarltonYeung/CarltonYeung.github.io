@@ -606,8 +606,6 @@ function highlightTaf(tafDiv, start, end) {
                 let becmgEnd = range[2];
 
                 if (indexOfDDHH(tafDiv, becmgEnd) <= indexOfDDHH(tafDiv, start)) {
-                    console.debug(`BECMG (line ${i}) may cover previous lines: ${lines[i]}`);
-
                     const reBecmgFm = /\b(TAF|BECMG|FM)/;
 
                     // wind
@@ -729,7 +727,7 @@ function highlightTaf(tafDiv, start, end) {
                 }
 
                 lines[i] = line.map(element => {
-                    if (!coveredElements.get(i).has(element)) {
+                    if (element.trim() && !coveredElements.get(i).has(element)) {
                         return highlightLine(element);
                     }
                     return element;
@@ -737,6 +735,20 @@ function highlightTaf(tafDiv, start, end) {
             }
         }
     }
+
+    // unhighlight base/FM/BECMG lines with no highlighted weather
+    for (let i = 0; i < lines.length; i++) {
+        const countMarks = (lines[i].match(/<\/mark>/g) || []).length;
+        const rePrefixBECMG = /\<mark\>\s*BECMG \d{4}\/\d{4}\s*\<\/mark\>/;
+        const rePrefixTAF = /\<mark\>\s*TAF \w{4} \d{6}Z \d{4}\/\d{4}\s*\<\/mark\>/;
+        const rePrefixFM = /\<mark\>\s*FM \d{6}\s*\<\/mark\>/;
+
+        if (countMarks === 1 && (lines[i].match(rePrefixBECMG) || lines[i].match(rePrefixTAF) || lines[i].match(rePrefixFM))) {
+            console.debug(`unhighlighting ${lines[i]}`);
+            lines[i] = lines[i].replace(/\<mark\>|\<\/mark\>/, "");
+        }
+    }
+
 
     tafDiv.innerHTML = clickableWind(lines.join("\n"), tafDiv.icao);
 }
