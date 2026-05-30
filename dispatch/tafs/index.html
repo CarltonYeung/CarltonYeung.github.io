@@ -638,17 +638,19 @@ function highlightTaf(tafDiv, start, end) {
                         for (let j = i - 1; j >= 0; j--) {
                             if (shouldHighlight[j] && lines[j].match(reBecmgFm)) {
                                 let cloudGroups = lines[j].match(reClouds);
-                                cloudGroups.forEach(cloudGroup => {
-                                    if (cloudGroup) {
-                                        console.debug(`${coveringClouds.join(" ")} (line ${i}) covers ${cloudGroup} (line ${j})`);
-                                        if (coveredElements.has(j)) {
-                                            coveredElements.get(j).add(cloudGroup);
+                                if (cloudGroups) {
+                                    cloudGroups.forEach(cloudGroup => {
+                                        if (cloudGroup) {
+                                            console.debug(`${coveringClouds.join(" ")} (line ${i}) covers ${cloudGroup} (line ${j})`);
+                                            if (coveredElements.has(j)) {
+                                                coveredElements.get(j).add(cloudGroup);
+                                            }
+                                            else {
+                                                coveredElements.set(j, new Set([cloudGroup]));
+                                            }
                                         }
-                                        else {
-                                            coveredElements.set(j, new Set([cloudGroup]));
-                                        }
-                                    }
-                                })
+                                    })
+                                }
                             }
                         }
                     }
@@ -681,17 +683,19 @@ function highlightTaf(tafDiv, start, end) {
                         for (let j = i - 1; j >= 0; j--) {
                             if (shouldHighlight[j] && lines[j].match(reBecmgFm)) {
                                 let wxGroups = lines[j].match(reWx);
-                                wxGroups.forEach(wxGroup => {
-                                    if (wxGroup) {
-                                        console.debug(`${coveringWx.join(" ")} (line ${i}) covers ${wxGroup} (line ${j})`);
-                                        if (coveredElements.has(j)) {
-                                            coveredElements.get(j).add(wxGroup);
+                                if (wxGroups) {
+                                    wxGroups.forEach(wxGroup => {
+                                        if (wxGroup) {
+                                            console.debug(`${coveringWx.join(" ")} (line ${i}) covers ${wxGroup} (line ${j})`);
+                                            if (coveredElements.has(j)) {
+                                                coveredElements.get(j).add(wxGroup);
+                                            }
+                                            else {
+                                                coveredElements.set(j, new Set([wxGroup]));
+                                            }
                                         }
-                                        else {
-                                            coveredElements.set(j, new Set([wxGroup]));
-                                        }
-                                    }
-                                })
+                                    })
+                                }
                             }
                         }
                     }
