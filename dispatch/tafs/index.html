@@ -505,11 +505,11 @@ function makeParagraphs(tafs) {
             let start = gTimeframes[tafDiv.icao].start;
             let end = gTimeframes[tafDiv.icao].end;
 
-            if (parseInt(start) >= parseInt(startLimit) && parseInt(end) <= parseInt(endLimit)) {
-                selectStart.value = gTimeframes[tafDiv.icao].start;
-                selectEnd.value = gTimeframes[tafDiv.icao].end;
-                buttonSwap.className = parseInt(selectStart.value) <= parseInt(selectEnd.value) ? "hidden" : "visible";
-                highlightTaf(tafDiv, selectStart.value, selectEnd.value);
+            if ((parseInt(start) >= parseInt(startLimit) || indexOfDDHH(tafDiv, start) >= 0) && (parseInt(end) <= parseInt(endLimit) || indexOfDDHH(tafDiv, end) >= 0)) {
+                selectStart.value = start;
+                selectEnd.value = end;
+                buttonSwap.className = indexOfDDHH(tafDiv, start) <= indexOfDDHH(tafDiv, end) ? "hidden" : "visible";
+                highlightTaf(tafDiv, start, end);
             }
         }
     });
@@ -884,6 +884,22 @@ function add24HH(ddhh, lastDD) {
     return ddhh;
 }
 
+function add27HH(ddhh, lastDD) {
+    for (let i = 0; i < 27; i++) {
+        ddhh = incrementDDHH(ddhh, lastDD);
+    }
+
+    return ddhh;
+}
+
+function add29HH(ddhh, lastDD) {
+    for (let i = 0; i < 29; i++) {
+        ddhh = incrementDDHH(ddhh, lastDD);
+    }
+
+    return ddhh;
+}
+
 function add30HH(ddhh, lastDD) {
     for (let i = 0; i < 30; i++) {
         ddhh = incrementDDHH(ddhh, lastDD);
@@ -901,19 +917,31 @@ function getLastDD(startDDHH, endDDHH) {
         lastDD = endDD;  // doesn't really matter because no rollover is necessary to get from startDDHH to endDDHH
     }
     else {
-        // case 1: last day is startDD, 24h taf
-        // case 2: last day is startDD, 30h taf
-        // case 3: last day is startDD + 1, 24h taf
-        // case 4: last day is startDD + 1, 30h taf
+        // case: last day is startDD, 24h taf
+        // case: last day is startDD, 30h taf
+        // case: last day is startDD + 1, 24h taf
+        // case: last day is startDD + 1, 30h taf
         // problem: there are sometimes tafs like 3021/0124 which aren't any of the above
 
         if (isDDHHequal(endDDHH, add24HH(startDDHH, startDD))) {
+            lastDD = startDD;
+        }
+        else if (isDDHHequal(endDDHH, add27HH(startDDHH, startDD))) {
+            lastDD = startDD;
+        }
+        else if (isDDHHequal(endDDHH, add29HH(startDDHH, startDD))) {
             lastDD = startDD;
         }
         else if (isDDHHequal(endDDHH, add30HH(startDDHH, startDD))) {
             lastDD = startDD;
         }
         else if (isDDHHequal(endDDHH, add24HH(startDDHH, String(parseInt(startDD) + 1).padStart(2, "0")))) {
+            lastDD = String(parseInt(startDD) + 1).padStart(2, "0");
+        }
+        else if (isDDHHequal(endDDHH, add27HH(startDDHH, String(parseInt(startDD) + 1).padStart(2, "0")))) {
+            lastDD = String(parseInt(startDD) + 1).padStart(2, "0");
+        }
+        else if (isDDHHequal(endDDHH, add29HH(startDDHH, String(parseInt(startDD) + 1).padStart(2, "0")))) {
             lastDD = String(parseInt(startDD) + 1).padStart(2, "0");
         }
         else if (isDDHHequal(endDDHH, add30HH(startDDHH, String(parseInt(startDD) + 1).padStart(2, "0")))) {
