@@ -876,32 +876,8 @@ function incrementDDHH(ddhh, lastDD) {
     return dd + hh;
 }
 
-function add24HH(ddhh, lastDD) {
-    for (let i = 0; i < 24; i++) {
-        ddhh = incrementDDHH(ddhh, lastDD);
-    }
-
-    return ddhh;
-}
-
-function add27HH(ddhh, lastDD) {
-    for (let i = 0; i < 27; i++) {
-        ddhh = incrementDDHH(ddhh, lastDD);
-    }
-
-    return ddhh;
-}
-
-function add29HH(ddhh, lastDD) {
-    for (let i = 0; i < 29; i++) {
-        ddhh = incrementDDHH(ddhh, lastDD);
-    }
-
-    return ddhh;
-}
-
-function add30HH(ddhh, lastDD) {
-    for (let i = 0; i < 30; i++) {
+function addXXHH(ddhh, lastDD, numHours) {
+    for (let i = 0; i < numHours; i++) {
         ddhh = incrementDDHH(ddhh, lastDD);
     }
 
@@ -914,37 +890,22 @@ function getLastDD(startDDHH, endDDHH) {
     let lastDD;
 
     if (parseInt(startDD) <= parseInt(endDD)) {
-        lastDD = endDD;  // doesn't really matter because no rollover is necessary to get from startDDHH to endDDHH
+        lastDD = endDD;  // no rollover is necessary to get from startDDHH to endDDHH
     }
     else {
-        // case: last day === startDD, 24h taf; e.g., startDD === 28, then next day is 01
-        // case: last day === startDD + 1, 24h taf; e.g., startDD == 28, then next day is 29
-        // case: last day === startDD, 30h taf (not sure if this case ever happens)
-        // case: last day === startDD + 1, 30h taf
-        // problem: there are sometimes tafs like 3021/0124 which aren't any of the above
+        const TAF_LENGTH_HOURS = [20, 30];  // Have seen 21, 22, 24, 26, 27, 29, 30 hour tafs
 
-        const increment = [add24HH, add27HH, add29HH, add30HH];
-        let resolved = false;
-        for (let i = 0; i < increment.length; i++) {
-            // last day is startDD
-            if (isDDHHequal(endDDHH, increment[i](startDDHH, startDD))) {
+        for (let tafLengthHours = TAF_LENGTH_HOURS[0]; tafLengthHours <= TAF_LENGTH_HOURS[1]; tafLengthHours++) {
+            // last day === startDD, X hour taf; e.g., startDD === 28, then next day is 01
+            if (isDDHHequal(endDDHH, addXXHH(startDDHH, startDD, tafLengthHours))) {
                 lastDD = startDD;
-                resolved = true;
-            }
-            // last day is startDD + 1
-            else if (isDDHHequal(endDDHH, increment[i](startDDHH, String(parseInt(startDD) + 1).padStart(2, "0")))) {
-                lastDD = String(parseInt(startDD) + 1).padStart(2, "0");
-                resolved = true;
-            }
-
-            if (resolved) {
                 break;
             }
-        }
-
-        if (!resolved) {
-            console.warn(`unable parsing taf period ${startDDHH}/${endDDHH}`);
-            return;
+            // last day === startDD + 1, X hour taf; e.g., startDD == 28, then next day is 29 which is the last day of the month
+            else if (isDDHHequal(endDDHH, addXXHH(startDDHH, String(parseInt(startDD) + 1).padStart(2, "0"), tafLengthHours))) {
+                lastDD = String(parseInt(startDD) + 1).padStart(2, "0");
+                break;
+            }
         }
     }
 
@@ -957,6 +918,7 @@ function appendTimeRangeOptions(selectStart, selectEnd, startDDHH, endDDHH) {
 
     const LAST_DD = getLastDD(startDDHH, endDDHH);
     if (!LAST_DD) {
+        console.warn(`unable to parse taf period ${selectStart.tafDiv.icao} ${startDDHH}/${endDDHH}`);
         return;
     }
     selectStart.tafDiv.lastDD = LAST_DD;
