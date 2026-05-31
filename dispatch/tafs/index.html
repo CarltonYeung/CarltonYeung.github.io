@@ -191,7 +191,7 @@
             <div id="wind-analysis">
                 <div id="wind-header">
                     <form id="wind-form" onsubmit="return analyzeWindFromInput()">
-                        <input type="text" id="wind-input" size="25" placeholder="ICAO 00000KT" oninput="return onWindInput()"></input>
+                        <input type="search" id="wind-input" size="25" placeholder="ICAO 00000KT" oninput="return onWindInput()"></input>
                     </form>
                 </div>
                 <table id="wind-components">
@@ -202,7 +202,7 @@
                         <th id="column-crosswind">crosswind (kts)</th>
                     </tr>
                 </table>
-                <p>source of runway data: <a href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a></p>
+                <p>source of runway data: <a id="runways-link" href="https://ourairports.com/about.html#overview" target="_blank">OurAirports</a></p>
             </div>
         </div>
         <div id="output-list">
@@ -264,11 +264,15 @@ function clickWind(icao, windGroup) {
     analyzeWind(icao, windGroup);
 }
 
-
 function onWindInput() {
     // reset validity so you can hit Enter on the input again
     document.getElementById("wind-input").setCustomValidity("");
     document.getElementById("wind-input").reportValidity();
+
+    // clear on X
+    if (!document.querySelector("#wind-input").value.trim()) {
+        analyzeWindFromInput();
+    }
 }
 
 function analyzeWindFromInput() {
@@ -280,11 +284,21 @@ function analyzeWindFromInput() {
     analyzeWind(icao, wind);
 }
 
+function updateRunwaysLink(icao) {
+    if (icao) {
+        document.querySelector("#runways-link").href = `https://ourairports.com/airports/${icao}/runways.html`;
+    }
+    else {
+        document.querySelector("#runways-link").href = `https://ourairports.com/about.html#overview`;
+    }
+}
+
 function analyzeWind(icao, windGroup) {
     const RWY_DIMENSIONS_UNIT = document.getElementById("column-dimensions-unit").innerText;
 
     let table = document.getElementById("wind-components");
     deleteRows(table);
+    updateRunwaysLink(icao);
 
     if (!gRunways[icao]) {
         if (icao) {
@@ -295,8 +309,8 @@ function analyzeWind(icao, windGroup) {
     }
 
     let re = /\s*(VRB|\d{3})(\d+)(?:G(\d+))?(KT|MPS)\s*/;
-    let matches = windGroup.match(re);
     try {
+        var matches = windGroup.match(re);
         var windDirection = matches[1] === "VRB" ? "VRB" : parseInt(matches[1]);
         var meanMagnitude = parseInt(matches[2]);
         var gustsMagnitude = parseInt(matches[3]);
