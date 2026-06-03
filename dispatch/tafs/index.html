@@ -163,6 +163,29 @@
         opacity: 50%;
     }
 
+    .contextMenu {
+        margin: 0;
+        padding: 0;
+        position: absolute;
+        display: block;
+        z-index: 99;
+        background-color: #2B3035;
+        box-shadow:
+            0px 4px 12px rgba(0, 0, 0, 0.4),
+            0px 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .contextMenuOption {
+        margin: 0;
+        padding: 5px 15px;
+        cursor: default;
+    }
+
+    .contextMenuOption:hover {
+        background-color: #77DD77;
+        color: black;
+    }
+
 </style>
 </head>
 <body>
@@ -512,6 +535,111 @@ function makeParagraphs(tafs) {
                 highlightTaf(tafDiv, start, end);
             }
         }
+
+        attachContextMenuHandler(tafDiv);
+    });
+}
+
+function attachContextMenuHandler(tafDiv) {
+
+    function closeContextMenu(func) {
+        if (document.body.contains(tafDiv.menu)) {
+            document.body.removeChild(tafDiv.menu);
+            document.body.removeEventListener("click", func);
+        }
+    }
+
+    function createOption(text) {
+        let option = document.createElement("p");
+        option.classList.add("contextMenuOption");
+        option.innerText = text;
+        return option;
+    }
+
+    function createOptionCopy() {
+        let optionCopy = createOption("copy");
+        optionCopy.addEventListener("click", function(event) {
+            navigator.clipboard.writeText(tafDiv.taf);
+            closeContextMenu(this);
+        });
+        return optionCopy;
+    }
+
+    function createOptionAsos() {
+        let optionAsos = createOption("asos");
+        optionAsos.addEventListener("click", function(event) {
+            window.open(`https://www.weather.gov/wrh/timeseries?site=${tafDiv.icao}`, "_blank");
+            closeContextMenu(this);
+        });
+        return optionAsos;
+    }
+
+    function createOptionMetar() {
+        let optionMetar = createOption("metar");
+        optionMetar.addEventListener("click", function(event) {
+            window.open(`https://aviationweather.gov/data/metar/?ids=${tafDiv.icao}&hours=3`, "_blank");
+            closeContextMenu(this);
+        });
+        return optionMetar;
+    }
+
+    function createOptionAtis() {
+        let optionAtis = createOption("atis");
+        optionAtis.addEventListener("click", function(event) {
+            window.open(`https://atis.info/${tafDiv.icao}`, "_blank");
+            closeContextMenu(this);
+        });
+        return optionAtis;
+    }
+
+    function createOptionFlightAware() {
+        let optionAtis = createOption("flightaware");
+        optionAtis.addEventListener("click", function(event) {
+            window.open(`https://www.flightaware.com/live/airport/${tafDiv.icao}`, "_blank");
+            closeContextMenu(this);
+        });
+        return optionAtis;
+    }
+
+    function createOptionFlightradar24() {
+        let optionAtis = createOption("fr24");
+        optionAtis.addEventListener("click", function(event) {
+            window.open(`https://www.flightradar24.com/airport/${tafDiv.icao}`, "_blank");
+            closeContextMenu(this);
+        });
+        return optionAtis;
+    }
+
+    document.body.addEventListener("contextmenu", function(event) {
+        event.preventDefault();
+
+        if (!tafDiv.contains(event.target)) {
+            closeContextMenu();
+            return;
+        }
+
+        if (!tafDiv.menu) {
+            tafDiv.menu = document.createElement("div");
+            tafDiv.menu.classList.add("contextMenu");
+            tafDiv.menu.appendChild(createOptionCopy());
+            tafDiv.menu.appendChild(createOptionAsos());
+            tafDiv.menu.appendChild(createOptionMetar());
+            if (tafDiv.icao[0] === "K" || ["PANC", "PHNL", "TJSJ"].includes(tafDiv.icao)) {
+                tafDiv.menu.appendChild(createOptionAtis());
+            }
+            tafDiv.menu.appendChild(createOptionFlightAware());
+            tafDiv.menu.appendChild(createOptionFlightradar24());
+
+            document.body.addEventListener("click", function(event) {
+                if (!tafDiv.menu.contains(event.target)) {
+                    closeContextMenu(this);
+                }
+            });
+        }
+
+        tafDiv.menu.style.top = `${event.pageY}px`;
+        tafDiv.menu.style.left = `${event.pageX}px`;
+        document.body.appendChild(tafDiv.menu);
     });
 }
 
