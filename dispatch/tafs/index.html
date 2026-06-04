@@ -611,12 +611,12 @@ function attachContextMenuHandler(tafDiv) {
     }
 
     document.body.addEventListener("contextmenu", function(event) {
-        event.preventDefault();
-
         if (!tafDiv.contains(event.target)) {
             closeContextMenu();
             return;
         }
+
+        event.preventDefault();
 
         if (!tafDiv.menu) {
             tafDiv.menu = document.createElement("div");
