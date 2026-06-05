@@ -181,6 +181,12 @@
         cursor: default;
     }
 
+    .contextMenuHeader {
+        color: #77DD77;
+        border-bottom: 1px solid #77DD77;
+        padding-bottom: 5px;
+    }
+
     .contextMenuOptionActive {
         color: white;
     }
@@ -562,6 +568,14 @@ function attachContextMenuHandler(tafDiv) {
         }
     }
 
+    function createMenuHeader() {
+        let option = document.createElement("p");
+        option.classList.add("contextMenuOption", "contextMenuHeader");
+        option.innerText = tafDiv.icao;
+        option.addEventListener("click", null);
+        return option;
+    }
+
     function createOption(text, action) {
         let option = document.createElement("p");
         option.classList.add("contextMenuOption", "contextMenuOptionActive");
@@ -642,6 +656,16 @@ function attachContextMenuHandler(tafDiv) {
         });
     }
 
+    function fitOnScreen() {
+        const rect = tafDiv.menu.getBoundingClientRect();
+        if (rect.bottom >= window.innerHeight - 20) {
+            tafDiv.menu.style.top = `${event.pageY - rect.height}px`;
+        }
+        if (rect.right >= window.innerWidth - 20) {
+            tafDiv.menu.style.left = `${event.pageX - rect.width}px`;
+        }
+    }
+
     document.body.addEventListener("contextmenu", function(event) {
         if (!tafDiv.contains(event.target)) {
             closeContextMenu();
@@ -656,6 +680,7 @@ function attachContextMenuHandler(tafDiv) {
         }
 
         tafDiv.menu.replaceChildren(...[
+            createMenuHeader(),
             createOptionCopy(),
             createOptionReset(),
             createOptionAsos(),
@@ -675,6 +700,7 @@ function attachContextMenuHandler(tafDiv) {
         tafDiv.menu.style.top = `${event.pageY}px`;
         tafDiv.menu.style.left = `${event.pageX}px`;
         document.body.appendChild(tafDiv.menu);
+        fitOnScreen();
     }, { signal: gContextMenuController.signal });
 }
 
