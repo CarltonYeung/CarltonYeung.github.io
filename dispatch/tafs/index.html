@@ -181,9 +181,17 @@
         cursor: default;
     }
 
-    .contextMenuOption:hover {
+    .contextMenuOptionActive {
+        color: white;
+    }
+
+    .contextMenuOptionActive:hover {
         background-color: #77DD77;
         color: black;
+    }
+
+    .contextMenuOptionDisabled {
+        color: gray;
     }
 
 </style>
@@ -548,7 +556,7 @@ function makeParagraphs(tafs) {
 
 function attachContextMenuHandler(tafDiv) {
 
-    function closeContextMenu(func) {
+    function closeContextMenu() {
         if (document.body.contains(tafDiv.menu)) {
             document.body.removeChild(tafDiv.menu);
         }
@@ -556,12 +564,20 @@ function attachContextMenuHandler(tafDiv) {
 
     function createOption(text, action) {
         let option = document.createElement("p");
-        option.classList.add("contextMenuOption");
+        option.classList.add("contextMenuOption", "contextMenuOptionActive");
         option.innerText = text;
         option.addEventListener("click", function(event) {
             action(event);
-            closeContextMenu(this);
+            closeContextMenu();
         });
+        return option;
+    }
+
+    function createDisabled(text) {
+        let option = document.createElement("p");
+        option.classList.add("contextMenuOption", "contextMenuOptionDisabled");
+        option.innerText = text;
+        option.addEventListener("click", null);
         return option;
     }
 
@@ -571,21 +587,34 @@ function attachContextMenuHandler(tafDiv) {
         });
     }
 
+    function createOptionReset() {
+        if (tafDiv.selectStart.selectedIndex > -1 || tafDiv.selectEnd.selectedIndex > -1) {
+            return createOption("reset", function(event) {
+                resetTaf(tafDiv);
+            });
+        }
+        return createDisabled("reset");
+    }
+
     function createOptionAsos() {
         return createOption("asos", function(event) {
             window.open(`https://www.weather.gov/wrh/timeseries?site=${tafDiv.icao}`, "_blank");
         });
     }
 
-    function createOptionMetar() {
-        return createOption("metar", function(event) {
-            window.open(`https://aviationweather.gov/data/metar/?ids=${tafDiv.icao}&hours=3`, "_blank");
-        });
-    }
-
     function createOptionAtis() {
+        if (tafDiv.icao[0] === "K" || ["PANC", "PHNL", "TJSJ"].includes(tafDiv.icao)) {
+            return createOption("atis", function(event) {
+                window.open(`https://atis.info/${tafDiv.icao}`, "_blank");
+            });
+        }
+        else if (tafDiv.icao[0] === "C") {
+            return createOption("atis", function(event) {
+                window.open(`https://spaces.navcanada.ca/workspace/aeroview/${tafDiv.icao}`, "_blank");
+            });
+        }
         return createOption("atis", function(event) {
-            window.open(`https://atis.info/${tafDiv.icao}`, "_blank");
+            window.open(`https://atis.guru/atis/${tafDiv.icao}`, "_blank");
         });
     }
 
@@ -607,12 +636,6 @@ function attachContextMenuHandler(tafDiv) {
         });
     }
 
-    function createOptionNavCanada() {
-        return createOption("atis", function(event) {
-            window.open(`https://spaces.navcanada.ca/workspace/aeroview/${tafDiv.icao}`, "_blank");
-        });
-    }
-
     function createOptionLiveATC() {
         return createOption("liveatc", function(event) {
             window.open(`https://www.liveatc.net/search/?icao=${tafDiv.icao}`, "_blank");
@@ -630,26 +653,24 @@ function attachContextMenuHandler(tafDiv) {
         if (!tafDiv.menu) {
             tafDiv.menu = document.createElement("div");
             tafDiv.menu.classList.add("contextMenu");
-            tafDiv.menu.appendChild(createOptionCopy());
-            tafDiv.menu.appendChild(createOptionAsos());
-            tafDiv.menu.appendChild(createOptionMetar());
-            if (tafDiv.icao[0] === "K" || ["PANC", "PHNL", "TJSJ"].includes(tafDiv.icao)) {
-                tafDiv.menu.appendChild(createOptionAtis());
-            }
-            else if (tafDiv.icao[0] === "C") {
-                tafDiv.menu.appendChild(createOptionNavCanada());
-            }
-            tafDiv.menu.appendChild(createOptionFlightAware());
-            tafDiv.menu.appendChild(createOptionFlightradar24());
-            tafDiv.menu.appendChild(createOptionSkyVector());
-            tafDiv.menu.appendChild(createOptionLiveATC());
         }
+
+        tafDiv.menu.replaceChildren(...[
+            createOptionCopy(),
+            createOptionReset(),
+            createOptionAsos(),
+            createOptionAtis(),
+            createOptionFlightAware(),
+            createOptionFlightradar24(),
+            createOptionSkyVector(),
+            createOptionLiveATC()
+        ]);
 
         document.body.addEventListener("click", function(event) {
             if (!tafDiv.menu.contains(event.target)) {
-                closeContextMenu(this);
+                closeContextMenu();
             }
-        }, { once: true });
+        }, { signal: gContextMenuController.signal });
 
         tafDiv.menu.style.top = `${event.pageY}px`;
         tafDiv.menu.style.left = `${event.pageX}px`;
@@ -915,6 +936,13 @@ function alertOnAlteredTaf(tafDiv) {
     if (tafDiv.innerText !== tafDiv.taf) {
         console.warn(`taf does not match original\n${tafDiv.taf}`);
     }
+}
+
+function resetTaf(tafDiv) {
+    unhighlightTaf(tafDiv);
+    tafDiv.selectStart.selectedIndex = -1;
+    tafDiv.selectEnd.selectedIndex = -1;
+    tafDiv.selectStart.buttonSwap.className = "hidden";
 }
 
 function unhighlightTaf(tafDiv) {
