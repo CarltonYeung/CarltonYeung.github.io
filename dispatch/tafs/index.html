@@ -239,6 +239,7 @@
 
 let gTimeframes = {};
 let gRunways = {};
+let gContextMenuController = null;
 
 
 function handleTafInput(input) {
@@ -471,6 +472,11 @@ function makeParagraphs(tafs) {
     let outputList = document.getElementById("output-list");
     outputList.replaceChildren();
 
+    if (gContextMenuController) {
+        gContextMenuController.abort();
+    }
+    gContextMenuController = new AbortController();
+
     tafsArray.forEach((tafText, index) => {
         let tafDiv = document.createElement("div");
         let re_icao = /(?:(?:TAF(?:\sCOR|\sAMD)?\s)?(\w{4})\s\d{6}Z)/;
@@ -545,96 +551,72 @@ function attachContextMenuHandler(tafDiv) {
     function closeContextMenu(func) {
         if (document.body.contains(tafDiv.menu)) {
             document.body.removeChild(tafDiv.menu);
-            document.body.removeEventListener("click", func);
         }
     }
 
-    function createOption(text) {
+    function createOption(text, action) {
         let option = document.createElement("p");
         option.classList.add("contextMenuOption");
         option.innerText = text;
+        option.addEventListener("click", function(event) {
+            action(event);
+            closeContextMenu(this);
+        });
         return option;
     }
 
     function createOptionCopy() {
-        let option = createOption("copy");
-        option.addEventListener("click", function(event) {
+        return createOption("copy", function(event) {
             navigator.clipboard.writeText(tafDiv.taf);
-            closeContextMenu(this);
         });
-        return option;
     }
 
     function createOptionAsos() {
-        let option = createOption("asos");
-        option.addEventListener("click", function(event) {
+        return createOption("asos", function(event) {
             window.open(`https://www.weather.gov/wrh/timeseries?site=${tafDiv.icao}`, "_blank");
-            closeContextMenu(this);
         });
-        return option;
     }
 
     function createOptionMetar() {
-        let option = createOption("metar");
-        option.addEventListener("click", function(event) {
+        return createOption("metar", function(event) {
             window.open(`https://aviationweather.gov/data/metar/?ids=${tafDiv.icao}&hours=3`, "_blank");
-            closeContextMenu(this);
         });
-        return option;
     }
 
     function createOptionAtis() {
-        let option = createOption("atis");
-        option.addEventListener("click", function(event) {
+        return createOption("atis", function(event) {
             window.open(`https://atis.info/${tafDiv.icao}`, "_blank");
-            closeContextMenu(this);
         });
-        return option;
     }
 
     function createOptionFlightAware() {
-        let option = createOption("flightaware");
-        option.addEventListener("click", function(event) {
+        return createOption("flightaware", function(event) {
             window.open(`https://www.flightaware.com/live/airport/${tafDiv.icao}`, "_blank");
-            closeContextMenu(this);
         });
-        return option;
     }
 
     function createOptionFlightradar24() {
-        let option = createOption("fr24");
-        option.addEventListener("click", function(event) {
+        return createOption("fr24", function(event) {
             window.open(`https://www.flightradar24.com/airport/${tafDiv.icao}`, "_blank");
-            closeContextMenu(this);
         });
-        return option;
     }
 
     function createOptionSkyVector() {
-        let option = createOption("skyvector");
-        option.addEventListener("click", function(event) {
+        return createOption("skyvector", function(event) {
             window.open(`https://skyvector.com/airport/${tafDiv.icao}`, "_blank");
-            closeContextMenu(this);
         });
-        return option;
     }
 
     function createOptionNavCanada() {
-        let option = createOption("atis");
-        option.addEventListener("click", function(event) {
+        return createOption("atis", function(event) {
             window.open(`https://spaces.navcanada.ca/workspace/aeroview/${tafDiv.icao}`, "_blank");
-            closeContextMenu(this);
         });
-        return option;
     }
 
     function createOptionLiveATC() {
-        let option = createOption("liveatc");
-        option.addEventListener("click", function(event) {
+        return createOption("liveatc", function(event) {
             window.open(`https://www.liveatc.net/search/?icao=${tafDiv.icao}`, "_blank");
-            closeContextMenu(this);
         });
-        return option;
     }
 
     document.body.addEventListener("contextmenu", function(event) {
@@ -661,18 +643,18 @@ function attachContextMenuHandler(tafDiv) {
             tafDiv.menu.appendChild(createOptionFlightradar24());
             tafDiv.menu.appendChild(createOptionSkyVector());
             tafDiv.menu.appendChild(createOptionLiveATC());
-
-            document.body.addEventListener("click", function(event) {
-                if (!tafDiv.menu.contains(event.target)) {
-                    closeContextMenu(this);
-                }
-            });
         }
+
+        document.body.addEventListener("click", function(event) {
+            if (!tafDiv.menu.contains(event.target)) {
+                closeContextMenu(this);
+            }
+        }, { once: true });
 
         tafDiv.menu.style.top = `${event.pageY}px`;
         tafDiv.menu.style.left = `${event.pageX}px`;
         document.body.appendChild(tafDiv.menu);
-    });
+    }, { signal: gContextMenuController.signal });
 }
 
 function indexOfDDHH(tafDiv, ddhh) {
