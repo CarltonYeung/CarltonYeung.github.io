@@ -480,10 +480,8 @@ function deleteRows(table) {
 }
 
 function makeParagraphs(tafs) {
-    let re = /\n\n/g;
-    let tafsArray = tafs.split(re);
-
-    let outputList = document.getElementById("output-list");
+    let tafsArray = tafs.split(/\n\n/g);
+    let outputList = document.querySelector("#output-list");
     outputList.replaceChildren();
 
     if (gContextMenuController) {
@@ -491,81 +489,100 @@ function makeParagraphs(tafs) {
     }
     gContextMenuController = new AbortController();
 
-    tafsArray.forEach((tafText, index) => {
-        let tafDiv = document.createElement("div");
-        let re_icao = /(?:(?:TAF(?:\sCOR|\sAMD)?\s)?(\w{4})\s\d{6}Z)/;
-        let matches = tafText.match(re_icao);
-        tafDiv.icao = matches[1];
-        tafDiv.innerHTML = clickableWind(tafText, tafDiv.icao);
-        tafDiv.taf = tafText;
-        tafDiv.className = "output";
+    tafsArray.forEach((tafText) => {
+        const [TIMERANGE_DIV, TAF_DIV] = makeTafParagraph(tafText);
+        outputList.appendChild(TIMERANGE_DIV);
+        outputList.appendChild(TAF_DIV);
+    });
+}
 
-        let timeRangeDiv = document.createElement("div");
-        timeRangeDiv.className = "selectContainer";
+function makeTafParagraph(tafText) {
+    let tafDiv = document.createElement("div");
+    let matches = tafText.match(/(?:(?:TAF(?:\sCOR|\sAMD)?\s)?(\w{4})\s\d{6}Z)/);
+    tafDiv.icao = matches[1];
+    tafDiv.innerHTML = clickableWind(tafText, tafDiv.icao);
+    tafDiv.taf = tafText;
+    tafDiv.className = "output";
 
-        let selectStart = document.createElement("select");
-        selectStart.size = 1;
-        selectStart.className = "selectStart";
-        timeRangeDiv.appendChild(selectStart);
+    let timeRangeDiv = makeTimeRangeDiv(tafDiv);
+    const [TAF_START, TAF_END] = parseValidityPeriod(tafText);
+    appendTimeRangeOptions(timeRangeDiv.selectStart, timeRangeDiv.selectEnd, TAF_START, TAF_END);
+    timeRangeDiv.selectStart.value = null;
+    timeRangeDiv.selectEnd.value = null;
 
-        let selectEnd = document.createElement("select");
-        selectEnd.size = 1;
-        selectEnd.className = "selectEnd";
+    if (tafDiv.icao in gTimeframes) {
+        const SAVED_START = gTimeframes[tafDiv.icao].start;
+        const SAVED_END = gTimeframes[tafDiv.icao].end;
 
-        let buttonSwap = document.createElement("button");
-        buttonSwap.innerHTML = '<i class="fa-solid fa-right-left"></i>';
-        buttonSwap.className = "hidden";
-        buttonSwap.onclick = function(event) {
-            [selectStart.value, selectEnd.value] = [selectEnd.value, selectStart.value]
-            buttonSwap.className = "hidden";
-            highlightTaf(tafDiv, selectStart.value, selectEnd.value);
-            saveTimeframe(tafDiv.icao, selectStart, selectEnd);
-        };
-        selectStart.buttonSwap = buttonSwap;
-        selectEnd.buttonSwap = buttonSwap;
-
-        timeRangeDiv.appendChild(buttonSwap);
-        timeRangeDiv.appendChild(selectEnd);
-
-        outputList.appendChild(timeRangeDiv);
-        outputList.appendChild(tafDiv);
-
-        selectStart.selectEnd = selectEnd;
-        selectEnd.selectStart = selectStart;
-        selectStart.tafDiv = tafDiv;
-        tafDiv.selectStart = selectStart;
-        selectEnd.tafDiv = tafDiv;
-        tafDiv.selectEnd = selectEnd;
-        selectStart.onchange = startChanged;
-        selectEnd.onchange = endChanged;
-
-        const [TAF_START, TAF_END] = parseValidityPeriod(tafText);
-        appendTimeRangeOptions(selectStart, selectEnd, TAF_START, TAF_END);
-        selectStart.value = null;
-        selectEnd.value = null;
-
-        if (tafDiv.icao in gTimeframes) {
-            const START = gTimeframes[tafDiv.icao].start;
-            const END = gTimeframes[tafDiv.icao].end;
-
-            if (indexOfDDHH(tafDiv, END) >= 0) {
-                if (indexOfDDHH(tafDiv, START) >= 0) {
-                    selectStart.value = START;
-                }
-                else {
-                    selectStart.selectedIndex = 0;
-                }
-                selectEnd.value = END;
-                buttonSwap.className = indexOfDDHH(tafDiv, START) <= indexOfDDHH(tafDiv, END) ? "hidden" : "visible";
-                highlightTaf(tafDiv, selectStart.value, selectEnd.value);
+        if (indexOfDDHH(tafDiv, SAVED_END) >= 0) {
+            if (indexOfDDHH(tafDiv, SAVED_START) >= 0) {
+                timeRangeDiv.selectStart.value = SAVED_START;
             }
             else {
-                console.info(`unable to re-select ${tafDiv.icao} ${START} ${END}`);
+                timeRangeDiv.selectStart.selectedIndex = 0;
             }
+            timeRangeDiv.selectEnd.value = SAVED_END;
+            timeRangeDiv.swapButton.className = indexOfDDHH(tafDiv, SAVED_START) <= indexOfDDHH(tafDiv, SAVED_END) ? "hidden" : "visible";
+            highlightTaf(tafDiv, timeRangeDiv.selectStart.value, timeRangeDiv.selectEnd.value);
         }
+        else {
+            console.info(`unable to re-select ${tafDiv.icao} start=${SAVED_START} end=${SAVED_END}`);
+        }
+    }
 
-        attachContextMenuHandler(tafDiv);
-    });
+    attachContextMenuHandler(tafDiv);
+
+    return [timeRangeDiv, tafDiv];
+}
+
+function makeTimeRangeDiv(tafDiv) {
+    let timeRangeDiv = document.createElement("div");
+    timeRangeDiv.className = "selectContainer";
+
+    let selectStart = document.createElement("select");
+    selectStart.size = 1;
+    selectStart.className = "selectStart";
+
+    let selectEnd = document.createElement("select");
+    selectEnd.size = 1;
+    selectEnd.className = "selectEnd";
+
+    timeRangeDiv.selectStart = selectStart;
+    selectEnd.selectStart = selectStart;
+    tafDiv.selectStart = selectStart;
+    timeRangeDiv.selectEnd = selectEnd;
+    selectStart.selectEnd = selectEnd;
+    tafDiv.selectEnd = selectEnd;
+    selectStart.tafDiv = tafDiv;
+    selectEnd.tafDiv = tafDiv;
+
+    let swapButton = makeSwapButton(tafDiv, selectStart, selectEnd);
+    timeRangeDiv.swapButton = swapButton;
+    selectStart.swapButton = swapButton;
+    selectEnd.swapButton = swapButton;
+    tafDiv.swapButton = swapButton;
+
+    selectStart.onchange = startChanged;
+    selectEnd.onchange = endChanged;
+
+    timeRangeDiv.appendChild(selectStart);
+    timeRangeDiv.appendChild(swapButton);
+    timeRangeDiv.appendChild(selectEnd);
+
+    return timeRangeDiv;
+}
+
+function makeSwapButton(tafDiv, selectStart, selectEnd) {
+    let theButton = document.createElement("button");
+    theButton.innerHTML = '<i class="fa-solid fa-right-left"></i>';
+    theButton.className = "hidden";
+    theButton.onclick = function(event) {
+        [selectStart.value, selectEnd.value] = [selectEnd.value, selectStart.value]
+        theButton.className = "hidden";
+        highlightTaf(tafDiv, selectStart.value, selectEnd.value);
+        saveTimeframe(tafDiv.icao, selectStart.value, selectEnd.value);
+    };
+    return theButton;
 }
 
 function attachContextMenuHandler(tafDiv) {
@@ -975,7 +992,8 @@ function resetTaf(tafDiv) {
     unhighlightTaf(tafDiv);
     tafDiv.selectStart.value = null;
     tafDiv.selectEnd.value = null;
-    tafDiv.selectStart.buttonSwap.className = "hidden";
+    tafDiv.swapButton.className = "hidden";
+    saveTimeframe(tafDiv.icao, tafDiv.selectStart.value, tafDiv.selectEnd.value);
 }
 
 function unhighlightTaf(tafDiv) {
@@ -986,11 +1004,16 @@ function highlightLine(line) {
     return "<mark>" + line + "</mark>";
 }
 
-function saveTimeframe(icao, selectStart, selectEnd) {
-    gTimeframes[icao] = {
-        start: selectStart.value,
-        end: selectEnd.value
-    };
+function saveTimeframe(icao, startValue, endValue) {
+    if (!startValue && !endValue) {
+        delete gTimeframes[icao];
+    }
+    else {
+        gTimeframes[icao] = {
+            start: startValue,
+            end: endValue
+        };
+    }
 }
 
 function startChanged(event) {
@@ -1004,14 +1027,14 @@ function startChanged(event) {
 
     if (selectStart.options.selectedIndex > selectEnd.options.selectedIndex) {
         unhighlightTaf(selectStart.tafDiv);
-        selectStart.buttonSwap.className = "visible";
+        selectStart.swapButton.className = "visible";
     }
     else {
         highlightTaf(selectStart.tafDiv, selectStart.value, selectEnd.value);
-        selectStart.buttonSwap.className = "hidden";
+        selectStart.swapButton.className = "hidden";
     }
 
-    saveTimeframe(selectStart.tafDiv.icao, selectStart, selectEnd);
+    saveTimeframe(selectStart.tafDiv.icao, selectStart.value, selectEnd.value);
 }
 
 function endChanged(event) {
@@ -1025,14 +1048,14 @@ function endChanged(event) {
 
     if (selectStart.options.selectedIndex > selectEnd.options.selectedIndex) {
         unhighlightTaf(selectStart.tafDiv);
-        selectStart.buttonSwap.className = "visible";
+        selectStart.swapButton.className = "visible";
     }
     else {
         highlightTaf(selectStart.tafDiv, selectStart.value, selectEnd.value);
-        selectStart.buttonSwap.className = "hidden";
+        selectStart.swapButton.className = "hidden";
     }
 
-    saveTimeframe(selectStart.tafDiv.icao, selectStart, selectEnd);
+    saveTimeframe(selectStart.tafDiv.icao, selectStart.value, selectEnd.value);
 }
 
 function isDDHHequal(ddhh1, ddhh2) {
