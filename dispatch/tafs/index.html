@@ -539,20 +539,28 @@ function makeParagraphs(tafs) {
         selectStart.onchange = startChanged;
         selectEnd.onchange = endChanged;
 
-        let [startLimit, endLimit] = parseValidityPeriod(tafText);
-        appendTimeRangeOptions(selectStart, selectEnd, startLimit, endLimit);
+        const [TAF_START, TAF_END] = parseValidityPeriod(tafText);
+        appendTimeRangeOptions(selectStart, selectEnd, TAF_START, TAF_END);
         selectStart.value = null;
         selectEnd.value = null;
 
         if (tafDiv.icao in gTimeframes) {
-            let start = gTimeframes[tafDiv.icao].start;
-            let end = gTimeframes[tafDiv.icao].end;
+            const START = gTimeframes[tafDiv.icao].start;
+            const END = gTimeframes[tafDiv.icao].end;
 
-            if ((parseInt(start) >= parseInt(startLimit) || indexOfDDHH(tafDiv, start) >= 0) && (parseInt(end) <= parseInt(endLimit) || indexOfDDHH(tafDiv, end) >= 0)) {
-                selectStart.value = start;
-                selectEnd.value = end;
-                buttonSwap.className = indexOfDDHH(tafDiv, start) <= indexOfDDHH(tafDiv, end) ? "hidden" : "visible";
-                highlightTaf(tafDiv, start, end);
+            if (indexOfDDHH(tafDiv, END) >= 0) {
+                if (indexOfDDHH(tafDiv, START) >= 0) {
+                    selectStart.value = START;
+                }
+                else {
+                    selectStart.selectedIndex = 0;
+                }
+                selectEnd.value = END;
+                buttonSwap.className = indexOfDDHH(tafDiv, START) <= indexOfDDHH(tafDiv, END) ? "hidden" : "visible";
+                highlightTaf(tafDiv, selectStart.value, selectEnd.value);
+            }
+            else {
+                console.info(`unable to re-select ${tafDiv.icao} ${START} ${END}`);
             }
         }
 
@@ -712,7 +720,6 @@ function indexOfDDHH(tafDiv, ddhh) {
             index = i;
         }
     }
-    console.assert(index >= 0, `${ddhh} is not an option in the dropdown`);
     return index;
 }
 
@@ -966,8 +973,8 @@ function alertOnAlteredTaf(tafDiv) {
 
 function resetTaf(tafDiv) {
     unhighlightTaf(tafDiv);
-    tafDiv.selectStart.selectedIndex = -1;
-    tafDiv.selectEnd.selectedIndex = -1;
+    tafDiv.selectStart.value = null;
+    tafDiv.selectEnd.value = null;
     tafDiv.selectStart.buttonSwap.className = "hidden";
 }
 
