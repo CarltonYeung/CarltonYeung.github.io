@@ -652,9 +652,7 @@ function attachContextMenuHandler(tafDiv) {
                 window.open(`https://spaces.navcanada.ca/workspace/aeroview/${tafDiv.icao}`, "_blank");
             });
         }
-        return createOption("atis", function(event) {
-            window.open(`https://atis.guru/atis/${tafDiv.icao}`, "_blank");
-        });
+        return createDisabled("atis");
     }
 
     function createOptionFlightAware() {
@@ -679,6 +677,15 @@ function attachContextMenuHandler(tafDiv) {
         return createOption("liveatc", function(event) {
             window.open(`https://www.liveatc.net/search/?icao=${tafDiv.icao}`, "_blank");
         });
+    }
+
+    function createOptionHistory() {
+        if (tafDiv.icao[0] === "K" || tafDiv.icao[0] === "P" || tafDiv.icao[0] === "T") {
+            return createOption("history", function(event) {
+                window.open(`https://forecast.weather.gov/product.php?site=CRH&product=TAF&issuedby=${tafDiv.icao.slice(1)}`, "_blank");
+            })
+        }
+        return createDisabled("history");
     }
 
     function fitOnScreen() {
@@ -713,7 +720,8 @@ function attachContextMenuHandler(tafDiv) {
             createOptionFlightAware(),
             createOptionFlightradar24(),
             createOptionSkyVector(),
-            createOptionLiveATC()
+            createOptionLiveATC(),
+            createOptionHistory(),
         ]);
 
         document.body.addEventListener("click", function(event) {
