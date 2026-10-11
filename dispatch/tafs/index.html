@@ -864,7 +864,7 @@ function highlightTaf(tafDiv, start, end) {
                     }
 
                     // clouds
-                    const reClouds = /(?<=\s)((?:CLR|SKC|CAVOK)|(?:VV\d+)|(?:FEW|SCT|BKN|OVC)(?:\d+(?:CB|TCU)?))\b/g;
+                    const reClouds = /(?<=\s)((?:CLR|SKC|CAVOK|NSC)|(?:VV\d+)|(?:FEW|SCT|BKN|OVC)(?:\d+(?:CB|TCU)?))\b/g;
                     let coveringClouds = lines[i].match(reClouds);
                     if (coveringClouds && coveringClouds.length && coveringClouds.filter(e => e)) {
                         coveringClouds = coveringClouds.filter(e => e);
