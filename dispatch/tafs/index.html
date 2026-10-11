@@ -909,7 +909,7 @@ function highlightTaf(tafDiv, start, end) {
                     }
 
                     // wx phenomena
-                    const reWx = /((?<=\s)(?=[A-Z+-])(?<intensity>\-|\+|VC)?(?<descriptor>BC|MI|PR|BL|DR|SH|FZ|TS)?(?<precipitation>DZ|RA|SN|SG|IC|PL|GR|GS|UP)?(?<obscuration>BR|FG|FU|VA|DU|SA|HZ|PY)?(?<other>DS|FC|\+FC|PO|SQ|SS|NSW)?\b)/g;
+                    const reWx = /((?<=\s)(?=[A-Z+-])(?<intensity>\-|\+|VC)?(?<descriptor>BC|MI|PR|BL|DR|SH|FZ|TS)?(?<precipitation>DZ|RA|SN|SG|IC|PL|GR|GS|UP|RADZ)?(?<obscuration>BR|FG|FU|VA|DU|SA|HZ|PY)?(?<other>DS|FC|\+FC|PO|SQ|SS|NSW)?\b)/g;
                     let coveringWx = lines[i].match(reWx);
                     if (coveringWx && coveringWx.length && coveringWx.filter(e => e).length) {
                         coveringWx = coveringWx.filter(e => e);
