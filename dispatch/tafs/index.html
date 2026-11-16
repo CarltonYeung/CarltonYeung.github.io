@@ -1225,14 +1225,6 @@ function coalesceSpaces(taf) {
     return taf.replaceAll(re, " ");
 }
 
-function displayClock() {
-    let now = new Date().toUTCString();
-    document.getElementById('clock').innerHTML = now;
-
-    const REFRESH_INTERVAL = 1000;
-    mytime = setTimeout("displayClock()", REFRESH_INTERVAL)
-}
-
 async function fetchRunwayDatabase() {
     const URL = "https://davidmegginson.github.io/ourairports-data/runways.csv";
 
@@ -1339,8 +1331,20 @@ function fetchRunwayDatabaseOffline() {
     });
 }
 
+function getTimeNow() {
+    return new Date().toUTCString().replace(" GMT", "Z")
+}
+
+function displayClock() {
+    let now = getTimeNow();
+    document.getElementById('clock').innerHTML = now;
+
+    const REFRESH_INTERVAL = 1000;
+    mytime = setTimeout("displayClock()", REFRESH_INTERVAL)
+}
+
 function lastUpdated() {
-    let now = new Date().toUTCString();
+    let now = getTimeNow();
     document.getElementById("last-updated").textContent = `last updated: ${now}`;
 }
 
