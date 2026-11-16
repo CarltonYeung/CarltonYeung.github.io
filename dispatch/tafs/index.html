@@ -636,8 +636,13 @@ function attachContextMenuHandler(tafDiv) {
     }
 
     function createOptionAsos() {
-        return createOption("asos", function(event) {
-            window.open(`https://www.weather.gov/wrh/timeseries?site=${tafDiv.icao}`, "_blank");
+        if (isAvailableNWS(tafDiv.icao[0])) {
+            return createOption("asos", function(event) {
+                window.open(`https://www.weather.gov/wrh/timeseries?site=${tafDiv.icao}`, "_blank");
+            });
+        }
+        return createOption("metar", function(event) {
+            window.open(`https://aviationweather.gov/data/metar/?ids=${tafDiv.icao}&hours=6`, "_blank");
         });
     }
 
@@ -680,12 +685,16 @@ function attachContextMenuHandler(tafDiv) {
     }
 
     function createOptionHistory() {
-        if (tafDiv.icao[0] === "K" || tafDiv.icao[0] === "P" || tafDiv.icao[0] === "T") {
+        if (isAvailableNWS(tafDiv.icao[0])) {
             return createOption("history", function(event) {
                 window.open(`https://forecast.weather.gov/product.php?site=CRH&product=TAF&issuedby=${tafDiv.icao.slice(1)}`, "_blank");
             })
         }
         return createDisabled("history");
+    }
+
+    function isAvailableNWS(icao) {
+        return icao[0] === "K" || icao[0] === "P" || icao[0] === "T";
     }
 
     function fitOnScreen() {
